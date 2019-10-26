@@ -1,4 +1,6 @@
 import * as Ajv from 'ajv'
+import * as betterAjvErrors from 'better-ajv-errors'
+
 import { LOG_LEVEL } from '../../ds-types/src/index'
 
 const LogLevelValidation = {
@@ -268,12 +270,15 @@ const schema = {
   }
 }
 
-const ajv = new Ajv()
+export const validate = function (config: Object): void {
+  const ajv = new Ajv({ jsonPointers: true, allErrors: true })
+  const validator = ajv.compile(schema)
+  const valid = validator(config)
 
-export const validate  = function (config: Object): void {
-  if (!ajv.validate(schema, config)) {
-    throw new Error(
-      `Invalid configuration: ${ajv.errorsText()}`
-    )
+  if (!valid) {
+    const output = (betterAjvErrors(schema, config, validator.errors, { format: 'js' }) as never as betterAjvErrors.IOutputError[])
+    console.error('There was an error validating your configuration:')
+    output.forEach((e, i) => console.error(`${i + 1}) ${e.error}, ${e.suggestion}`))
+    process.exit(1)
   }
 }

@@ -5,9 +5,7 @@ import RuleCache from './rule-cache'
 import * as rulesMap from './rules-map'
 import { Message, RECORD_ACTION, EVENT_ACTION, RPC_ACTION, PRESENCE_ACTION } from '../../../constants'
 import RecordHandler from '../../../handlers/record/record-handler'
-import { DeepstreamPlugin, DeepstreamPermission, ValveConfig, DeepstreamServices, DeepstreamConfig, PermissionCallback, SocketWrapper, EVENT } from '../../../../ds-types/src/index'
-import { readAndParseFile } from '../../../config/js-yaml-loader'
-import { EventEmitter } from 'events'
+import { DeepstreamPlugin, DeepstreamPermission, ValveConfig, DeepstreamServices, DeepstreamConfig, PermissionCallback, SocketWrapper, EVENT, ValveSchema } from '../../../../ds-types/src/index'
 
 const UNDEFINED = 'undefined'
 
@@ -15,14 +13,11 @@ export type RuleType = string
 export type ValveSection = string
 
 export class ConfigPermission extends DeepstreamPlugin implements DeepstreamPermission {
-  private isReady: boolean = false
-  public description: string = `valve permissions loaded from ${this.permissionOptions.path}`
+  public description = 'Valve Permissions'
 
   private ruleCache: RuleCache
   private permissions: any
   private recordHandler: RecordHandler | null = null
-  private optionsValid: boolean = true
-  private emitter = new EventEmitter()
   private logger = this.services.logger.getNameSpace('PERMISSION')
 
   /**
@@ -34,23 +29,18 @@ export class ConfigPermission extends DeepstreamPlugin implements DeepstreamPerm
    * with the default permission.yml it allows everything, but at the same time provides
    * a convenient starting point for permission declarations.
    */
-  constructor (private permissionOptions: ValveConfig, private services: DeepstreamServices, private config: DeepstreamConfig, permissions?: ValveSection) {
+  constructor (private permissionOptions: ValveConfig, private services: DeepstreamServices, private config: DeepstreamConfig) {
     super()
     this.ruleCache = new RuleCache(this.permissionOptions)
 
     const maxRuleIterations = permissionOptions.maxRuleIterations
     if (maxRuleIterations !== undefined && maxRuleIterations < 1) {
-      this.optionsValid = false
       this.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, 'Maximum rule iteration has to be at least one')
-    } else if (permissions) {
-      this.useConfig(permissions)
     }
+    this.useConfig(permissionOptions.permissions)
   }
 
   public async whenReady (): Promise<void> {
-    if (!this.isReady) {
-      return new Promise((resolve) => this.emitter.once('ready', resolve))
-    }
   }
 
   public async close () {
@@ -58,48 +48,20 @@ export class ConfigPermission extends DeepstreamPlugin implements DeepstreamPerm
   }
 
   /**
-   * Will be called by the dependency initialiser once server.start() is called.
-   * This gives users a chance to change the path using server.set()
-   * first
-   */
-  public init (): void {
-    if (!this.permissions && this.optionsValid) {
-      this.loadConfig(this.permissionOptions.path)
-    }
-  }
-
-  /**
-   * Will be invoked with the initialised recordHandler instance by deepstream.io
+   * Will be invoked with the initialized recordHandler instance by deepstream.io
    */
   public setRecordHandler (recordHandler: RecordHandler): void {
     this.recordHandler = recordHandler
   }
 
   /**
-   * Load a configuration file. This will either load a configuration file for the first time at
-   * startup or reload the configuration at runtime
-   *
-   * CLI loadConfig <path>
-   */
-  public loadConfig (filePath: string): void {
-    readAndParseFile(filePath, (loadError: Error | null, permissions: any) => {
-      if (loadError) {
-        this.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, `error while loading config at ${filePath}`)
-        return
-      }
-      this.emitter.emit('config-loaded', filePath)
-      this.useConfig(permissions)
-    })
-  }
-
-  /**
    * Validates and compiles a loaded config. This can be called as the result
-   * of a config being passed to the permission service upon initialisation,
+   * of a config being passed to the permission service upon initialization,
    * as a result of loadConfig or at runtime
    *
    * CLI useConfig <config>
    */
-  public useConfig (permissions: any): void {
+  public useConfig (permissions: ValveSchema): void {
     const validationResult = configValidator.validate(permissions)
 
     if (validationResult !== true) {
@@ -109,7 +71,6 @@ export class ConfigPermission extends DeepstreamPlugin implements DeepstreamPerm
 
     this.permissions = configCompiler.compile(permissions)
     this.ruleCache.reset()
-    this.ready()
   }
 
   /**
@@ -193,16 +154,4 @@ export class ConfigPermission extends DeepstreamPlugin implements DeepstreamPerm
 
     return result
   }
-
-  /**
-   * Sets this permission service to ready. Occurs once the config has been successfully loaded,
-   * parsed and compiled
-   */
-  private ready (): void {
-    if (this.isReady === false) {
-      this.isReady = true
-      this.emitter.emit('ready')
-    }
-  }
-
 }

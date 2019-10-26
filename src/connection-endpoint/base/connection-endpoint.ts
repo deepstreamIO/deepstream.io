@@ -65,7 +65,7 @@ export default class BaseWebsocketConnectionEndpoint extends DeepstreamPlugin im
   }
 
   /**
-   * Initialise and setup the http and WebSocket servers.
+   * initialize and setup the http and WebSocket servers.
    */
   public init (): void {
     if (this.initialized) {

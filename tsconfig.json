@@ -25,7 +25,6 @@
   ],
   "exclude": [
     "**/*.spec.ts",
-    "**/installer.ts",
     "node_modules"
   ],
   "files": [

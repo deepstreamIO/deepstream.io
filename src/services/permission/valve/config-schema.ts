@@ -1,11 +1,4 @@
-import { Dictionary } from 'ts-essentials'
-
-/**
- * A basic schema for permission.json files that
- * the config validater uses
- */
-
-export type ConfigSchema = Dictionary<Dictionary<boolean>>
+import { ConfigSchema } from '../../../../ds-types/src'
 
 export const SCHEMA: ConfigSchema = {
   record: {

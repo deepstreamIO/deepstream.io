@@ -1,3 +1,7 @@
+import { readFileSync } from 'fs'
+import { join } from 'path'
+import { EOL } from 'os'
+
 import * as utils from '../utils/utils'
 import * as fileUtils from './file-utils'
 import { DeepstreamConfig, DeepstreamServices, DeepstreamConnectionEndpoint, PluginConfig, DeepstreamLogger, DeepstreamAuthentication, DeepstreamPermission, LOG_LEVEL, EVENT, DeepstreamMonitoring, DeepstreamAuthenticationCombiner, DeepstreamHTTPService } from '../../ds-types/src/index'
@@ -28,6 +32,8 @@ import { get as getDefaultOptions } from '../default-options'
 import Deepstream from '../deepstream.io'
 import { NodeHTTP } from '../services/http/node/node-http'
 import HTTPMonitoring from '../services/monitoring/http/monitoring-http'
+import { InitialLogs } from './js-yaml-loader'
+import * as configValidator from './config-validator'
 
 let commandLineArguments: any
 
@@ -69,7 +75,16 @@ export const registerPlugin = function (name: string, construct: Function) {
  * Takes a configuration object and instantiates functional properties.
  * CLI arguments will be considered.
  */
-export const initialise = function (deepstream: Deepstream, config: DeepstreamConfig): { config: DeepstreamConfig, services: DeepstreamServices } {
+export const initialize = function (deepstream: Deepstream, config: DeepstreamConfig, initialLogs: InitialLogs = []): { config: DeepstreamConfig, services: DeepstreamServices } {
+  configValidator.validate(config)
+
+  if (config.showLogo === true) {
+    const logo = readFileSync(join(__dirname, '..', '..', '/ascii-logo.txt'), 'utf8')
+
+    process.stdout.write(logo)
+    process.stdout.write(`${EOL}=====================   starting   =====================${EOL}`)
+  }
+
   commandLineArguments = global.deepstreamCLI || {}
   handleUUIDProperty(config)
   mergeConnectionOptions(config)
@@ -83,19 +98,38 @@ export const initialise = function (deepstream: Deepstream, config: DeepstreamCo
     }
   }
   services.logger = handleLogger(config, services)
-
-  const ll = config.logLevel
   services.monitoring = handleMonitoring(config, services)
-  services.subscriptions = new (resolvePluginClass(config.subscriptions, 'subscriptions', ll))(config.subscriptions.options, services, config)
-  services.storage = new (resolvePluginClass(config.storage, 'storage', ll))(config.storage.options, services, config)
-  services.cache = new (resolvePluginClass(config.cache, 'cache', ll))(config.cache.options, services, config)
+
+  initialLogs.forEach((log) => {
+    switch (log.level) {
+      case LOG_LEVEL.DEBUG:
+        services.logger.debug(log.event, log.message, log.meta)
+        break
+      case LOG_LEVEL.ERROR:
+        services.logger.error(log.event, log.message, log.meta)
+        break
+      case LOG_LEVEL.INFO:
+        services.logger.info(log.event, log.message, log.meta)
+        break
+      case LOG_LEVEL.WARN:
+        services.logger.warn(log.event, log.message, log.meta)
+        break
+      case LOG_LEVEL.FATAL:
+        services.logger.fatal(log.event, log.message, log.meta)
+        break
+    }
+  })
+
+  services.subscriptions = new (resolvePluginClass(config.subscriptions, 'subscriptions', services.logger))(config.subscriptions.options, services, config)
+  services.storage = new (resolvePluginClass(config.storage, 'storage', services.logger))(config.storage.options, services, config)
+  services.cache = new (resolvePluginClass(config.cache, 'cache', services.logger))(config.cache.options, services, config)
   services.authentication = handleAuthStrategies(config, services)
   services.permission = handlePermissionStrategies(config, services)
   services.connectionEndpoints = handleConnectionEndpoints(config, services)
-  services.locks = new (resolvePluginClass(config.locks, 'locks', ll))(config.locks.options, services, config)
-  services.clusterNode = new (resolvePluginClass(config.clusterNode, 'clusterNode', ll))(config.clusterNode.options, services, config)
-  services.clusterRegistry = new (resolvePluginClass(config.clusterRegistry, 'clusterRegistry', ll))(config.clusterRegistry.options, services, config)
-  services.clusterStates = new (resolvePluginClass(config.clusterStates, 'clusterStates', ll))(config.clusterStates.options, services, config)
+  services.locks = new (resolvePluginClass(config.locks, 'locks', services.logger))(config.locks.options, services, config)
+  services.clusterNode = new (resolvePluginClass(config.clusterNode, 'clusterNode', services.logger))(config.clusterNode.options, services, config)
+  services.clusterRegistry = new (resolvePluginClass(config.clusterRegistry, 'clusterRegistry', services.logger))(config.clusterRegistry.options, services, config)
+  services.clusterStates = new (resolvePluginClass(config.clusterStates, 'clusterStates', services.logger))(config.clusterStates.options, services, config)
   services.httpService = handleHTTPServer(config, services)
 
   handleCustomPlugins(config, services)
@@ -125,20 +159,9 @@ function handleLogger (config: DeepstreamConfig, services: DeepstreamServices): 
   if (config.logger.name === 'pino') {
     LoggerClass = PinoLogger
   } else if (config.logger.name || config.logger.path) {
-    LoggerClass = resolvePluginClass(config.logger, 'logger', config.logLevel)
+    LoggerClass = resolvePluginClass(config.logger, 'logger', services.logger)
     if (!LoggerClass) {
       throw new Error(`unable to resolve plugin ${config.logger.name || config.logger.path}`)
-    }
-  }
-  if (configOptions instanceof Array) {
-    // Note: This will not work on options without filename, and
-    // is biased against for the winston logger
-    let options
-    for (let i = 0; i < configOptions.length; i++) {
-      options = configOptions[i].options
-      if (options && options.filename) {
-        options.filename = fileUtils.lookupConfRequirePath(options.filename)
-      }
     }
   }
   const logger = new LoggerClass(configOptions, services, config)
@@ -150,10 +173,9 @@ function handleLogger (config: DeepstreamConfig, services: DeepstreamServices): 
   }
 
   if (LOG_LEVEL[config.logLevel]) {
-    // NOTE: config.logLevel has highest priority, compare to the level defined
-    // in the nested logger object
-    config.logLevel = config.logLevel
-    logger.setLogLevel(LOG_LEVEL[config.logLevel])
+    logger.setLogLevel(config.logLevel)
+  } else if (config.logLevel) {
+    throw new Error (`Unknown logLevel ${LOG_LEVEL[config.logLevel]}`)
   }
 
   return logger
@@ -179,7 +201,7 @@ function handleCustomPlugins (config: DeepstreamConfig, services: any): void {
   for (const key in plugins) {
     const plugin = plugins[key]
     if (plugin) {
-      const PluginConstructor = resolvePluginClass(plugin, key, config.logLevel)
+      const PluginConstructor = resolvePluginClass(plugin, key, services.logger)
       services.plugins[key] = new PluginConstructor(plugin.options || {}, services, config)
     }
   }
@@ -223,7 +245,7 @@ function handleConnectionEndpoints (config: DeepstreamConfig, services: any): De
     } else if (plugin.type === 'http') {
       PluginConstructor = HTTPConnectionEndpoint
     } else {
-      PluginConstructor = resolvePluginClass(plugin, 'connection', config.logLevel)
+      PluginConstructor = resolvePluginClass(plugin, 'connection', services.logger)
     }
 
     connectionEndpoints.push(new PluginConstructor(plugin.options, services, config))
@@ -238,7 +260,7 @@ function handleConnectionEndpoints (config: DeepstreamConfig, services: any): De
  *
  * CLI arguments will be considered.
  */
-function resolvePluginClass (plugin: PluginConfig, type: string, logLevel: LOG_LEVEL): any {
+function resolvePluginClass (plugin: PluginConfig, type: string, logger: DeepstreamLogger): any {
   if (customPlugins.has(plugin.name)) {
     return customPlugins.get(plugin.name)
   }
@@ -262,10 +284,8 @@ function resolvePluginClass (plugin: PluginConfig, type: string, logLevel: LOG_L
         requirePath = fileUtils.lookupLibRequirePath(`deepstream.io-${type.toLowerCase()}-${plugin.name.toLowerCase()}`)
         es6Adaptor = req(requirePath)
       } catch (secondError) {
-        if (Number(LOG_LEVEL[logLevel]) === LOG_LEVEL.DEBUG) {
-          console.log(`Error loading module ${firstPath}: ${firstError}`)
-          console.log(`Error loading module ${requirePath}: ${secondError}`)
-        }
+        logger.debug(EVENT.CONFIG_ERROR, `Error loading module ${firstPath}: ${firstError}`)
+        logger.debug(EVENT.CONFIG_ERROR, `Error loading module ${requirePath}: ${secondError}`)
         throw new Error(`Cannot load module ${firstPath} or ${requirePath}`)
       }
     }
@@ -277,6 +297,7 @@ function resolvePluginClass (plugin: PluginConfig, type: string, logLevel: LOG_L
   } else if (plugin.type === 'default' && defaultPlugins.has(type as any)) {
     pluginConstructor = defaultPlugins.get(type as any)
   } else {
+    // This error is used to bubble the event due to how tests are written
     throw new Error(`Neither name nor path property found for ${type}, plugin type: ${plugin.type}`)
   }
   return pluginConstructor
@@ -318,7 +339,7 @@ function handleAuthStrategy (auth: PluginConfig, config: DeepstreamConfig, servi
   }
 
   if (auth.name || auth.path) {
-    AuthenticationHandlerClass = resolvePluginClass(auth, 'authentication', config.logLevel)
+    AuthenticationHandlerClass = resolvePluginClass(auth, 'authentication', services.logger)
     if (!AuthenticationHandlerClass) {
       throw new Error(`unable to resolve authentication handler ${auth.name || auth.path}`)
     }
@@ -356,7 +377,7 @@ function handlePermissionStrategies (config: DeepstreamConfig, services: Deepstr
   }
 
   if (permission.name || permission.path) {
-    PermissionHandlerClass = resolvePluginClass(permission, 'permission', config.logLevel)
+    PermissionHandlerClass = resolvePluginClass(permission, 'permission', services.logger)
     if (!PermissionHandlerClass) {
       throw new Error(`unable to resolve plugin ${permission.name || permission.path}`)
     }
@@ -379,7 +400,7 @@ function handleMonitoring (config: DeepstreamConfig, services: DeepstreamService
   }
 
   if (config.monitoring.name || config.monitoring.path) {
-    return new (resolvePluginClass(config.monitoring, 'monitoring', config.logLevel))(config.monitoring.options, services, config)
+    return new (resolvePluginClass(config.monitoring, 'monitoring', services.logger))(config.monitoring.options, services, config)
   } else if (config.monitoring.type && (monitoringPlugins as any)[config.monitoring.type]) {
     MonitoringClass = (monitoringPlugins as any)[config.monitoring.type]
   } else {
@@ -405,7 +426,7 @@ function handleHTTPServer (config: DeepstreamConfig, services: DeepstreamService
   }
 
   if (config.httpServer.name || config.httpServer.path) {
-    return new (resolvePluginClass(config.httpServer, 'httpServer', config.logLevel))(config.httpServer.options, services, config)
+    return new (resolvePluginClass(config.httpServer, 'httpServer', services.logger))(config.httpServer.options, services, config)
   } else if (config.httpServer.type && (httpPlugins as any)[config.httpServer.type]) {
     HttpServerClass = (httpPlugins as any)[config.httpServer.type]
   } else if (config.httpServer.type === 'uws') {
@@ -413,8 +434,7 @@ function handleHTTPServer (config: DeepstreamConfig, services: DeepstreamService
       const { UWSHTTP } = require('../services/http/uws/uws-http')
       HttpServerClass = UWSHTTP
     } catch (e) {
-      console.error('Error loading uws http service, this is most likely due to uWebsocket.js not being supported on this platform')
-      process.exit(1)
+      throw new Error('Error loading uws http service, this is most likely due to uWebsocket.js not being supported on this platform')
     }
   } else {
     throw new Error(`Unknown httpServer type ${config.httpServer.type}`)

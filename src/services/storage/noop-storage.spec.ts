@@ -10,7 +10,7 @@ describe('retuns null for all values', () => {
     noopStorage = new NoopStorage()
   })
 
-  it('has created the noop storage', async () => {
+  it('has created the Noop Storage', async () => {
     await noopStorage.whenReady()
   })
 

@@ -1,6 +1,6 @@
 import { exec } from 'child_process'
 
-import { promises as fsPromises, existsSync } from 'fs'
+import { existsSync, unlinkSync, chmodSync, writeFileSync } from 'fs'
 
 import systemdTemplate from './template/systemd'
 import initdTemplate from './template/initd'
@@ -33,7 +33,7 @@ async function deleteSystemD (name: string, callback: Function) {
     return
   }
   try {
-    await fsPromises.unlink(filepath)
+    unlinkSync(filepath)
     const cmd = 'systemctl daemon-reload'
     console.log('Running %s...', cmd)
     exec(cmd, (e) => {
@@ -71,8 +71,8 @@ async function setupSystemD (name: string, options: any, callback: Function) {
     return
   }
   try {
-    await fsPromises.writeFile(filepath, script)
-    await fsPromises.chmod(filepath, '755')
+    writeFileSync(filepath, script)
+    chmodSync(filepath, '755')
     const cmd = 'systemctl daemon-reload'
     console.log('Running %s...', cmd)
     exec(cmd, (e2) => {
@@ -97,7 +97,7 @@ async function deleteSystemV (name: string, callback: Function) {
   }
 
   try {
-    await fsPromises.unlink(filepath)
+    unlinkSync(filepath)
     callback(null, 'SystemD service removed successfully')
   } catch (e) {
     callback(e)
@@ -131,8 +131,8 @@ async function setupSystemV (name: string, options: any, callback: Function) {
   }
 
   try {
-    await fsPromises.writeFile(filepath, script)
-    await fsPromises.chmod(filepath, '755')
+    writeFileSync(filepath, script)
+    chmodSync(filepath, '755')
     callback(null, 'init.d service registered successfully')
   } catch (e) {
     callback(e)

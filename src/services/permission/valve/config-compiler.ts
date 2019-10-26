@@ -1,12 +1,12 @@
 import * as pathParser from './path-parser'
 import * as ruleParser from './rule-parser'
-import { ConfigSchema } from './config-schema'
+import { ValveSchema } from '../../../../ds-types/src'
 
 /**
  * Compiles a pre-validated config into a format that allows for quicker access
  * and execution
  */
-export const compile = function (config: ConfigSchema) {
+export const compile = function (config: ValveSchema) {
   const compiledConfig: any = {}
   let compiledRuleset
   let section

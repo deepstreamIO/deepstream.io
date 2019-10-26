@@ -72,7 +72,7 @@ describe('encounters timeouts and errors during dependency initialisations', () 
     })
   })
 
-  it("creates a dependency initialiser and doesn't initialise a plugin in time", async () => {
+  it("creates a dependency initialiser and doesn't initialize a plugin in time", async () => {
     services.logger.logSpy.resetHistory()
     dependencyInitialiser = new DependencyInitialiser(config as any, services as any, config.plugin, 'plugin')
 

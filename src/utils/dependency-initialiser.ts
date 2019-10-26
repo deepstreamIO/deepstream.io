@@ -7,7 +7,7 @@ export class DependencyInitialiser {
   private emitter = new EventEmitter()
 
 /**
- * This class is used to track the initialisation of an individual service or plugin
+ * This class is used to track the initialization of an individual service or plugin
  */
   constructor (private config: DeepstreamConfig, private services: DeepstreamServices, private dependency: DeepstreamPlugin, private name: string) {
     if (typeof this.dependency.whenReady !== 'function') {

@@ -1,15 +1,12 @@
 import * as crypto from 'crypto'
 import { DeepstreamPlugin, DeepstreamAuthentication, DeepstreamServices, EVENT } from '../../../../ds-types/src/index'
 import { validateMap } from '../../../utils/utils'
-import { readAndParseFile } from '../../../config/js-yaml-loader'
-import { EventEmitter } from 'events'
 
 const STRING = 'string'
 const STRING_CHARSET = 'base64'
 
 interface FileAuthConfig {
-  //  path to the user file
-  path: string
+  users: any
   // the name of a HMAC digest algorithm, a.g. 'sha512'
   hash: string | false
   // the amount of times the algorithm should be applied
@@ -26,12 +23,8 @@ interface FileAuthConfig {
  * of clients with static credentials, e.g. backend provider that write to publicly readable records
  */
 export class FileBasedAuthentication extends DeepstreamPlugin implements DeepstreamAuthentication {
-  public description: string = `file using ${this.settings.path}`
+  public description: string = 'File Authentication'
   private base64KeyLength: number
-  private data: any
-
-  private isReady: boolean = false
-  private emitter = new EventEmitter()
 
   /**
   * Creates the class, reads and validates the users.json file
@@ -40,14 +33,11 @@ export class FileBasedAuthentication extends DeepstreamPlugin implements Deepstr
     super()
     this.validateSettings(settings)
     this.base64KeyLength = 4 * Math.ceil(this.settings.keyLength / 3)
-    readAndParseFile(settings.path, this.onFileLoad.bind(this))
   }
 
   public async whenReady (): Promise<void> {
-    if (!this.isReady) {
-      return new Promise((resolve) => this.emitter.once('ready', resolve))
-    }
   }
+
   /**
   * Main interface. Authenticates incoming connections
   */
@@ -66,7 +56,7 @@ export class FileBasedAuthentication extends DeepstreamPlugin implements Deepstr
       }
     }
 
-    const userData = this.data[authData.username]
+    const userData = this.settings.users[authData.username]
 
     if (!userData) {
       return null
@@ -122,57 +112,33 @@ export class FileBasedAuthentication extends DeepstreamPlugin implements Deepstr
   }
 
   /**
-  * Callback for loaded JSON files. Makes sure that
-  * no errors occured and every user has an associated password
-  */
-  private onFileLoad (error: Error | null, data: any): void {
-    if (error) {
-      this.services.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, `Error loading file ${this.settings.path}`)
-      return
-    }
-
-    this.data = data
-
-    if (Object.keys(data).length === 0) {
-      this.services.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, 'no users present in user file')
-      return
-    }
-
-    for (const username in this.data) {
-      if (typeof this.data[username].password !== STRING) {
-        this.services.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, `missing password for ${username}`)
-      }
-    }
-
-    this.isReady = true
-    this.emitter.emit('ready')
-  }
-
-  /**
   * Called initially to validate the user provided settings
   */
-  private validateSettings (settings: any) {
+  private validateSettings (settings: FileAuthConfig) {
     try {
-      if (!settings.hash) {
+      if (settings.hash) {
         validateMap(settings, true, {
-          path: 'string',
+          hash: 'string',
+          iterations: 'number',
+          keyLength: 'number',
         })
-        return
-      }
-
-      validateMap(settings, true, {
-        path: 'string',
-        hash: 'string',
-        iterations: 'number',
-        keyLength: 'number',
-      })
-
-      if (crypto.getHashes().indexOf(settings.hash) === -1) {
-        throw new Error(`Unknown Hash ${settings.hash}`)
+        if (crypto.getHashes().indexOf(settings.hash) === -1) {
+          throw new Error(`Unknown Hash ${settings.hash}`)
+        }
       }
     } catch (e) {
       this.services.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, 'Validating settings failed for file auth', e.message)
     }
 
+    if (Object.keys(settings.users).length === 0) {
+      this.services.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, 'no users present in user file')
+      return
+    }
+
+    for (const username in this.settings.users) {
+      if (typeof settings.users[username].password !== STRING) {
+        this.services.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, `missing password for ${username}`)
+      }
+    }
   }
 }

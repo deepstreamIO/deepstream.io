@@ -4,13 +4,13 @@ import {get} from '../../default-options'
 import MessageConnectorMock from '../mock/message-connector-mock'
 import LoggerMock from '../mock/logger-mock'
 import StorageMock from '../mock/storage-mock'
-import { DeepstreamConfig, DeepstreamServices, SocketWrapper, DeepstreamMonitoring, DeepstreamPlugin, PermissionCallback, LOG_LEVEL, EVENT } from '../../../ds-types/src/index'
+import { DeepstreamConfig, DeepstreamServices, SocketWrapper, DeepstreamMonitoring, DeepstreamPlugin, PermissionCallback, LOG_LEVEL, EVENT, ValveSchema } from '../../../ds-types/src/index'
 import { Message } from '../../constants'
 import { DefaultSubscriptionRegistryFactory } from '../../services/subscription-registry/default-subscription-registry-factory'
 import { DistributedStateRegistryFactory } from '../../services/cluster-state/distributed-state-registry-factory'
 import { DistributedClusterRegistry } from '../../services/cluster-registry/distributed-cluster-registry'
 
-export const getBasePermissions = function () {
+export const getBasePermissions = function (): ValveSchema {
   return {
     presence: {
       '*': {
@@ -137,7 +137,8 @@ const ConfigPermission = require('../../services/permission/valve/config-permiss
 
 export const testPermission = function (options: { config: DeepstreamConfig, services: DeepstreamServices }) {
   return function (permissions: any, message: Message, username?: string, userdata?: any, callback?: PermissionCallback) {
-    const permission = new ConfigPermission(options.config.permission.options, options.services, options.config, permissions)
+    options.config.permission.options.permissions = permissions
+    const permission = new ConfigPermission(options.config.permission.options, options.services, options.config)
     permission.setRecordHandler({
       removeRecordRequest: () => {},
       runWhenRecordStable: (r: any, c: any) => { c(r) }

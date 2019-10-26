@@ -1,14 +1,16 @@
 # General
 # Each server within a cluster needs a unique name. Set to UUID to have deepstream autogenerate a unique id
 serverName: UUID
-# Show the deepstream logo on startup (highly recommended)
-showLogo: true
+# Show the deepstream logo on startup
+showLogo: false
 # Log messages with this level and above. Valid levels are DEBUG, INFO, WARN, ERROR, OFF
 logLevel: INFO
 # Plugin startup timeout – deepstream init will fail if any plugins fail to emit a 'done' event within this timeout
 dependencyInitializationTimeout: 2000
 # Directory where all plugins reside
 #libDir: ../lib
+# Exit the process a fatal error occurs, like losing a cache connection
+exitOnFatalError: false
 
 rpc:
   # Timeout for client RPC acknowledgement
@@ -144,11 +146,11 @@ connectionEndpoints:
       # note: a custom authentication handler is required for token generation
       enableAuthEndpoint: false
       # path for authentication requests
-      authPath: /auth
+      authPath: /api/auth
       # path for POST requests
-      postPath: /
+      postPath: /api
       # path for GET requests
-      getPath: /
+      getPath: /api
       # maximum allowed size of an individual message in bytes
       maxMessageSize: 1024
 
@@ -202,44 +204,43 @@ auth:
   #     # the length of the resulting key
   #     # keyLength: 32
 
-  #  # reading users and passwords from a file
-  #  type: file
-  #  options:
-  #    # Path to the user file. Can be json, js or yml
-  #    path: file(users.yml)
-  #    # the name of a HMAC digest algorithm
-  #    hash: 'md5'
-  #    # the number of times the algorithm should be applied
-  #    iterations: 100
-  #    # the length of the resulting key
-  #    keyLength: 32
+  # - type: file
+  #   options:
+  #     # Path to the user file. Can be json, js or yml
+  #     users: fileLoad(users.yml)
+  #     # the name of a HMAC digest algorithm
+  #     hash: 'md5'
+  #     # the number of times the algorithm should be applied
+  #     iterations: 100
+  #     # the length of the resulting key
+  #     keyLength: 32
 
-  #  # getting permissions from a http webhook
-  #  type: http
-  #  options:
-  #    # a post request will be send to this url on every incoming connection
-  #    endpointUrl: https://someurl.com/validateLogin
-  #    # any of these will be treated as access granted
-  #    permittedStatusCodes: [ 200 ]
-  #    # if the webhook didn't respond after this amount of milliseconds, the connection will be rejected
-  #    requestTimeout: 2000
-  #    # promote the following items from the login auth data into headers
-  #    promoteToHeader:
-  #     - token
-  #    # the codes which the auth handler should retry. This is useful for when the API you depend on is 
-  #    # flaky or going through a not so blue/green deployment
-  #    retryStatusCodes: [ 404, 504 ]
-  #    # the maximum amount of retries before returning a false login
-  #    retryAttempts: 3
-  #    # the time in milliseconds between retries
-  #    retryInterval: 5000
+  # # getting permissions from a http webhook
+  # - type: http
+  #   options:
+  #     # a post request will be send to this url on every incoming connection
+  #     endpointUrl: https://someurl.com/validateLogin
+  #     # any of these will be treated as access granted
+  #     permittedStatusCodes: [ 200 ]
+  #     # if the webhook didn't respond after this amount of milliseconds, the connection will be rejected
+  #     requestTimeout: 2000
+  #     # promote the following items from the login auth data into headers
+  #     promoteToHeader:
+  #       - token
+  #     # the codes which the auth handler should retry. This is useful for when the API you depend on is 
+  #     # flaky or going through a not so blue/green deployment
+  #     retryStatusCodes: [ 404, 504 ]
+  #     # the maximum amount of retries before returning a false login
+  #     retryAttempts: 3
+  #     # the time in milliseconds between retries
+  #     retryInterval: 5000
 
 # Permissioning
 permission:
   type: config
   options:
-    # Path to the permissionFile. Can be json, js or yml
-    path: file(permissions.yml)
+    # Permissions file
+    permissions: fileLoad(permissions.yml)
     # Amount of times nested cross-references will be loaded. Avoids endless loops
     maxRuleIterations: 3
     # PermissionResults are cached to increase performance. Lower number means more loading
@@ -261,4 +262,3 @@ permission:
 # plugins:
 #   custom:
 #     path: '...'
-      

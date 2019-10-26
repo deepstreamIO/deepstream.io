@@ -8,6 +8,8 @@ import { STATES, JSONValue } from '../../src/constants'
 import { LocalCache } from '../../src/services/cache/local-cache'
 import { ConfigPermission } from '../../src/services/permission/valve/config-permission'
 import { E2EClusterNode } from './e2e-cluster-node'
+import * as openPermissions from '../config/permissions-open.json'
+import * as complexPermissions from '../config/permissions-complex.json'
 
 const cache = new LocalCache()
 
@@ -32,11 +34,11 @@ export class E2EHarness extends EventEmitter {
   }
 
   public getHttpUrl (serverId: number) {
-    return `localhost:${this.ports[serverId - 1]}/`
+    return `localhost:${this.ports[serverId - 1]}/api`
   }
 
   public getAuthUrl (serverId: number) {
-    return `localhost:${this.ports[serverId - 1]}/auth`
+    return `localhost:${this.ports[serverId - 1]}/api/auth`
   }
 
   public async updateStorageDirectly (recordName: string, version: number, data: JSONValue) {
@@ -70,9 +72,7 @@ export class E2EHarness extends EventEmitter {
   public async updatePermissions (type: string) {
     const promises = this.servers.map((server) => {
       const permission = server.getServices().permission as never as ConfigPermission
-      const promise = new Promise((resolve) => (permission as any).emitter.once('config-loaded', resolve))
-      permission.loadConfig(`./test-e2e/config/permissions-${type}.json`)
-      return promise
+      permission.useConfig(type === 'open' ? openPermissions : complexPermissions)
     })
     await Promise.all(promises)
   }

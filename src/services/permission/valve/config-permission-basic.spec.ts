@@ -337,13 +337,13 @@ describe('permission handler applies basic permissions referencing their own dat
 describe('loads permissions repeatedly', () => {
   let permission
 
-  it('creates the permission', () => {
-    permission = new ConfigPermission({}, services, config, getBasePermissions())
+  it('creates the permission', async () => {
+    permission = new ConfigPermission({ permissions: getBasePermissions() }, services, config)
     permission.setRecordHandler({
       removeRecordRequest: () => {},
       runWhenRecordStable: (r, c) => { c(r) }
     })
-    expect(permission.isReady).to.equal(true)
+    await permission.whenReady()
   })
 
   it('requests permissions initially, causing a lookup', (next) => {

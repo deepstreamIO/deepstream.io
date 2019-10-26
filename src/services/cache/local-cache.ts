@@ -2,7 +2,7 @@ import { DeepstreamPlugin, DeepstreamCache, StorageWriteCallback, StorageReadCal
 import { JSONValue } from '../../constants'
 
 export class LocalCache extends DeepstreamPlugin implements DeepstreamCache {
-  public description = 'local cache'
+  public description = 'Local Cache'
 
   private data = new Map<string, { version: number, data: JSONValue }>()
 

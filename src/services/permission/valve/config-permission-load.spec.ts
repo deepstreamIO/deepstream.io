@@ -4,15 +4,13 @@ import {spy, assert} from 'sinon'
 import * as C from '../../../constants'
 import { ConfigPermission } from './config-permission'
 import * as testHelper from '../../../test/helper/test-helper'
-import { PromiseDelay } from '../../../utils/utils';
-import { EVENT } from '../../../../ds-types/src/index';
+import { PromiseDelay } from '../../../utils/utils'
+import { EVENT } from '../../../../ds-types/src/index'
+
+import * as invalidPermissionConfig from '../../../test/config/invalid-permission-conf.json'
+import * as noPrivateEventsConfig from '../../../test/config/no-private-events-permission-config.json'
 
 const { config, services } = testHelper.getDeepstreamPermissionOptions()
-
-const recordHandler = {
-  removeRecordRequest: () => {},
-  runWhenRecordStable: (r, c) => { c(r) }
-}
 
 describe('permission handler loading', () => {
   beforeEach(() => {
@@ -20,53 +18,34 @@ describe('permission handler loading', () => {
   })
 
   describe('permission handler is initialised correctly', () => {
-    it('loads a valid config file upon initialisation', async () => {
+    it('loads a valid config file upon initialization', async () => {
       const permission = new ConfigPermission({
-        path: './conf/permissions.yml',
+        permissions: testHelper.getBasePermissions(),
         cacheEvacuationInterval: 60000,
         maxRuleIterations: 10
       }, services, config)
       assert.notCalled(services.logger.fatal)
-      permission.init()
       await permission.whenReady()
     })
 
-    it('fails to load maxRuleIterations less than zero initialisation', async () => {
+    it('fails to load maxRuleIterations less than zero initialization', async () => {
       const permission = new ConfigPermission({
-        path: './conf/permissions.yml',
+        permissions: testHelper.getBasePermissions(),
         cacheEvacuationInterval: 60000,
         maxRuleIterations: 0
       }, services, config)
-
-      permission.init()
 
       assert.calledOnce(services.logger.fatal)
       assert.calledWithExactly(services.logger.fatal, EVENT.PLUGIN_INITIALIZATION_ERROR, 'Maximum rule iteration has to be at least one')
     })
 
-    it('fails to load a non existant config file upon initialisation', async () => {
-      const permission = new ConfigPermission({
-        path: './does-not-exist.yml',
+    it('fails when loading an invalid config file upon initialization', async () => {
+      // tslint:disable-next-line: no-unused-expression
+      new ConfigPermission({
+        permissions: invalidPermissionConfig,
         cacheEvacuationInterval: 60000,
         maxRuleIterations: 10
       }, services, config)
-
-      permission.init()
-
-      await PromiseDelay(10)
-
-      assert.calledOnce(services.logger.fatal)
-      assert.calledWithExactly(services.logger.fatal, EVENT.PLUGIN_INITIALIZATION_ERROR, 'error while loading config at ./does-not-exist.yml')
-    })
-
-    it('fails when loading an invalid config file upon initialisation', async () => {
-      const permission = new ConfigPermission({
-        path: './src/test/config/invalid-permission-conf.json',
-        cacheEvacuationInterval: 60000,
-        maxRuleIterations: 10
-      }, services, config)
-
-      permission.init()
 
       await PromiseDelay(10)
 
@@ -76,16 +55,15 @@ describe('permission handler loading', () => {
   })
 
   describe('it loads a new config during runtime', () => {
-    let permission
+    let permission: ConfigPermission
     const onError = spy()
 
-    it('loads a valid config file upon initialisation', async () => {
+    it('loads a valid config file upon initialization', async () => {
       permission = new ConfigPermission({
-        path: './conf/permissions.yml',
+        permissions: testHelper.getBasePermissions(),
         cacheEvacuationInterval: 60000,
         maxRuleIterations: 10
       }, services, config)
-      permission.init()
 
       await permission.whenReady()
     })
@@ -107,17 +85,6 @@ describe('permission handler loading', () => {
       permission.canPerformAction('some-user', message, callback)
     })
 
-    it('loads a new config', (next) => {
-      const path = './src/test/config/no-private-events-permission-config.json'
-
-      permission.emitter.on('config-loaded', (loadedPath) => {
-        expect(loadedPath).to.equal(path)
-        setTimeout(next, 20)
-      })
-
-      permission.loadConfig(path)
-    })
-
     it('denies publishing of a private event', (next) => {
       expect(onError).to.have.callCount(0)
 
@@ -134,7 +101,8 @@ describe('permission handler loading', () => {
         next()
       }
 
-      permission.canPerformAction('some-user', message, callback)
+      permission.useConfig(noPrivateEventsConfig)
+      permission.canPerformAction('some-user', message, callback, {})
     })
   })
 })

@@ -491,7 +491,7 @@ Due to the nature of this fix, it may result in compatability issues with applic
 
 ### Bug Fixes
 
-- Fix wrong validation of valve permissions when `data` is used as a property [#346](https://github.com/deepstreamIO/deepstream.io/pull/346)
+- Fix wrong validation of Valve Permissions when `data` is used as a property [#346](https://github.com/deepstreamIO/deepstream.io/pull/346)
 
 ### Enhancements
 
@@ -605,7 +605,7 @@ There are different options what you can pass:
   - passing a string which is a path to a configuration file, supported formats: __.yml__, __.json__ and __.js__
   - passing an object which defines several options, all other options will be merged from deepstream's default values
 
-###### Valve permissions rules
+###### Valve Permissions rules
 You can write your permission into a structured file. This file supports a special syntax, which allows you to do advanced permission checks. This syntax is called __Valve__.
 
 #### Enhancements
@@ -614,7 +614,7 @@ You can write your permission into a structured file. This file supports a speci
 deepstream now uses [uws](https://github.com/uWebSockets/uWebSockets), a native C++ websocket server
 
 ###### no process.exit on plugin initialization error or timeout
-deepstream will not longer stops your process via `process.exit()`. This happened before when a connector failed to initialise correctly [#243](https://github.com/deepstreamIO/deepstream.io/issues/243) instead it will throw an error now.
+deepstream will not longer stops your process via `process.exit()`. This happened before when a connector failed to initialize correctly [#243](https://github.com/deepstreamIO/deepstream.io/issues/243) instead it will throw an error now.
 
 Currently the API provides no event or callback to handle this error
 other than subscribing to the global `uncaughtException` event.

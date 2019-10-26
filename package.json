@@ -40,6 +40,7 @@
   "dependencies": {
     "@deepstream/protobuf": "^1.0.1",
     "ajv": "^6.10.2",
+    "better-ajv-errors": "^0.6.7",
     "body-parser": "^1.19.0",
     "chalk": "^2.4.2",
     "commander": "^3.0.2",

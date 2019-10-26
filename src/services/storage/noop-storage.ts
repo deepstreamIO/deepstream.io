@@ -1,7 +1,7 @@
 import { DeepstreamPlugin, StorageWriteCallback, StorageReadCallback, DeepstreamStorage } from '../../../ds-types/src/index'
 
 export class NoopStorage extends DeepstreamPlugin implements DeepstreamStorage {
-  public description = 'noop storage'
+  public description = 'Noop Storage'
 
   public set (key: string, version: number, data: any, callback: StorageWriteCallback) {
     process.nextTick(() => callback(null))

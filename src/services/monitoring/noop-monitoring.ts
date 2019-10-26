@@ -2,7 +2,7 @@ import { DeepstreamPlugin, DeepstreamMonitoring, LOG_LEVEL, EVENT } from '../../
 import { Message } from '../../constants'
 
 export class NoopMonitoring extends DeepstreamPlugin implements DeepstreamMonitoring {
-  public description: string = 'noop monitoring'
+  public description: string = 'Noop Monitoring'
 
   public onErrorLog (loglevel: LOG_LEVEL, event: EVENT, logMessage: string): void {
   }

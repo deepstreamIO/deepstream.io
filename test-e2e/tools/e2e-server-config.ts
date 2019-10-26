@@ -1,4 +1,5 @@
 import { PartialDeepstreamConfig, LOG_LEVEL } from '../../ds-types/src/index'
+import * as permissions from '../config/permissions-open.json'
 
 export const getServerConfig = (port: number): PartialDeepstreamConfig => ({
     serverName : `server-${port}`,
@@ -22,7 +23,7 @@ export const getServerConfig = (port: number): PartialDeepstreamConfig => ({
     permission: {
       type    : 'config',
       options : {
-        path: './test-e2e/config/permissions-open.json'
+        permissions
       } as any
     },
 

@@ -1,8 +1,5 @@
 require('source-map-support').install()
 
-import { EOL } from 'os'
-import { readFileSync } from 'fs'
-import { join as joinPath } from 'path'
 import { EventEmitter } from 'events'
 
 import * as pkg from '../package.json'
@@ -18,9 +15,8 @@ import PresenceHandler from './handlers/presence/presence-handler'
 import MonitoringHandler from './handlers/monitoring/monitoring'
 
 import { get as getDefaultOptions } from './default-options'
-import * as configInitialiser from './config/config-initialiser'
+import * as configInitializer from './config/config-initialiser'
 import * as jsYamlLoader from './config/js-yaml-loader'
-import * as configValidator from './config/config-validator'
 
 import { DependencyInitialiser } from './utils/dependency-initialiser'
 import { DeepstreamConfig, DeepstreamServices, DeepstreamPlugin, PartialDeepstreamConfig, EVENT, SocketWrapper, ConnectionListener } from '../ds-types/src/index'
@@ -140,8 +136,8 @@ export class Deepstream extends EventEmitter {
 /**
  * Starts up deepstream. The startup process has three steps:
  *
- * - First of all initialise the logger and wait for it (ready event)
- * - Then initialise all other dependencies (cache connector, message connector, storage connector)
+ * - First of all initialize the logger and wait for it (ready event)
+ * - Then initialize all other dependencies (cache connector, message connector, storage connector)
  * - Instantiate the messaging pipeline and record-, rpc- and event-handler
  * - Start WS server
  */
@@ -150,7 +146,6 @@ export class Deepstream extends EventEmitter {
       this.startWhenLoaded = true
       return
     }
-    this.showStartLogo()
     this.transition('start')
   }
 
@@ -219,7 +214,7 @@ export class Deepstream extends EventEmitter {
   }
 
 /**
- * First stage in the Deepstream initialisation sequence. Initialises the logger.
+ * First stage in the Deepstream initialization sequence. Initialises the logger.
  */
   private async loggerInit (): Promise<void> {
     const logger = this.services.logger
@@ -454,35 +449,13 @@ private async pluginsShutdown () {
       result = await jsYamlLoader.loadConfig(this, config)
       this.configFile = result.file
     } else {
-      configInitialiser.mergeConnectionOptions(config)
+      configInitializer.mergeConnectionOptions(config)
       const rawConfig = merge(getDefaultOptions(), config) as DeepstreamConfig
-      result = configInitialiser.initialise(this, rawConfig)
-    }
-    try {
-      configValidator.validate(result.config)
-    } catch (e) {
-      console.error(e.message)
-      process.exit(1)
+      result = configInitializer.initialize(this, rawConfig)
     }
     this.config = result.config
     this.services = result.services
     this.transition('loading-config')
-  }
-
-/**
- * Shows a giant ASCII art logo which is absolutely crucial
- * for the proper functioning of the server
- */
-  private showStartLogo (): void {
-    if (this.config.showLogo !== true) {
-      return
-    }
-    const logo = readFileSync(joinPath(__dirname, '..', '/ascii-logo.txt'), 'utf8')
-
-    process.stdout.write(logo + EOL)
-    process.stdout.write(
-    ` =====================   starting   =====================${EOL}`
-  )
   }
 
   private onClientConnected (socketWrapper: SocketWrapper): void {

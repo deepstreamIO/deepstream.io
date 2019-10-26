@@ -26,7 +26,7 @@ export function get (): DeepstreamConfig {
      */
     libDir: null,
     serverName: getUid(),
-    showLogo: true,
+    showLogo: false,
     logLevel: LOG_LEVEL.INFO,
     dependencyInitializationTimeout: 2000,
     // defaults to false as the event is captured via commander when run via binary or standalone
@@ -58,9 +58,9 @@ export function get (): DeepstreamConfig {
         options: {
           allowAuthData: true,
           enableAuthEndpoint: true,
-          authPath: '/auth',
-          postPath: '/',
-          getPath: '/'
+          authPath: '/api/auth',
+          postPath: '/api',
+          getPath: '/api'
         }
       },
       {

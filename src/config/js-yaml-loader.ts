@@ -4,11 +4,17 @@ import * as path from 'path'
 
 import { get as getDefaultOptions } from '../default-options'
 import { merge } from '../utils/utils'
-import { DeepstreamConfig } from '../../ds-types/src/index'
+import { DeepstreamConfig, LOG_LEVEL, EVENT } from '../../ds-types/src/index'
 import Deepstream from '../deepstream.io'
+import * as configInitializer from './config-initialiser'
+import * as fileUtils from './file-utils'
 
-const configInitialiser = require('./config-initialiser')
-const fileUtils = require('./file-utils')
+export type InitialLogs = Array<{
+  level: LOG_LEVEL
+  message: string
+  event: any,
+  meta: any
+}>
 
 const SUPPORTED_EXTENSIONS = ['.yml', '.yaml', '.json', '.js']
 const DEFAULT_CONFIG_DIRS = [
@@ -43,13 +49,13 @@ export const readAndParseFile = function (filePath: string, callback: Function):
 }
 
 /**
- * Loads a config file without having to initialise it. Useful for one
+ * Loads a config file without having to initialize it. Useful for one
  * off operations such as generating a hash via cli
  */
-export const loadConfigWithoutInitialization = async function (filePath: string | null = null, args?: object): Promise<any> {
+export const loadConfigWithoutInitialization = async function (filePath: string | null = null, initialLogs: InitialLogs = [], args?: object): Promise<any> {
   const argv = args || global.deepstreamCLI || {}
   const configPath = setGlobalConfigDirectory(argv, filePath)
-  const configString = await loadFiles(lookupConfigPaths(fs.readFileSync(configPath, { encoding: 'utf8' })))
+  const configString = await loadFiles(lookupConfigPaths(fs.readFileSync(configPath, { encoding: 'utf8' })), initialLogs)
 
   const rawConfig = parseFile(configPath, configString)
   const config = extendConfig(rawConfig, argv)
@@ -68,8 +74,9 @@ export const loadConfigWithoutInitialization = async function (filePath: string 
  * some properties like the plugins (logger and connectors).
  */
 export const loadConfig = async function (deepstream: Deepstream, filePath: string | null, args?: object) {
-  const config = await loadConfigWithoutInitialization(filePath, args)
-  const result = configInitialiser.initialise(deepstream, config.config)
+  const logs: InitialLogs = []
+  const config = await loadConfigWithoutInitialization(filePath, logs, args)
+  const result = configInitializer.initialize(deepstream, config.config, logs)
   return {
     config: result.config,
     services: result.services,
@@ -200,7 +207,7 @@ function lookupConfigPaths (fileContent: string): string {
   return fileContent
 }
 
-async function loadFiles (fileContent: string): Promise<string> {
+async function loadFiles (fileContent: string, initialLogs: InitialLogs): Promise<string> {
   const matches = fileContent.match(/fileLoad\((.*)\)/g)
   if (matches) {
     const promises = matches.map(async (match) => {
@@ -215,14 +222,28 @@ async function loadFiles (fileContent: string): Promise<string> {
           if (['.yml', '.yaml', '.js', '.json'].includes(path.extname(filename))) {
             content = parseFile(filename, content)
           }
+          initialLogs.push({
+            level: LOG_LEVEL.INFO,
+            message: `Loaded content from ${fileUtils.lookupConfRequirePath(filename)} for ${match}`,
+            event: EVENT.CONFIG_TRANSFORM,
+            meta: undefined
+          })
         } catch (e) {
-          console.error(`Error loading config file, invalid format in file: ${fileUtils}`)
-          process.exit(1)
+          initialLogs.push({
+            level: LOG_LEVEL.FATAL,
+            event: EVENT.CONFIG_ERROR,
+            message: `Error loading config file, invalid format in file ${fileUtils.lookupConfRequirePath(filename)} for ${match}`,
+            meta: undefined
+          })
         }
         fileContent = fileContent.replace(match, JSON.stringify(content))
       } catch (e) {
-        console.error(`Error loading config file, missing file: ${fileUtils}`)
-        process.exit(1)
+        initialLogs.push({
+          level: LOG_LEVEL.FATAL,
+          event: EVENT.CONFIG_ERROR,
+          message: `Error loading config file, missing file ${fileUtils.lookupConfRequirePath(filename)} for ${match}`,
+          meta: undefined
+        })
       }
     })
     await Promise.all(promises)
