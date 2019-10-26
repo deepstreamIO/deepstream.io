@@ -254,7 +254,7 @@ function distros {
         --package-name-suffix ${COMMIT} \
         -n deepstream.io \
         -v ${PACKAGE_VERSION} \
-        --license "AGPL-3.0" \
+        --license "MIT" \
         --vendor "deepstreamHub GmbH" \
         --description "deepstream.io rpm package" \
         --url https://deepstream.io/ \
@@ -277,7 +277,7 @@ function distros {
         --package-name-suffix ${COMMIT} \
         -n deepstream.io \
         -v ${PACKAGE_VERSION} \
-        --license "AGPL-3.0" \
+        --license "MIT" \
         --vendor "deepstreamHub GmbH" \
         --description "deepstream.io deb package" \
         --url https://deepstream.io/ \

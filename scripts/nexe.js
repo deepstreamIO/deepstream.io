@@ -21,7 +21,7 @@ nexe.compile({
     ProductVersion: version,
     OriginalFilename: "deepstream.exe",
     InternalName: "deepstream",
-    LegalCopyright: "AGPL"
+    LegalCopyright: "MIT"
   }
 }).then(() => {
   console.log('success')
