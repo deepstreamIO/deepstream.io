@@ -76,7 +76,7 @@
     "async": "^3.1.0",
     "chai": "^4.2.0",
     "coveralls": "^3.0.7",
-    "cucumber": "^6.0.2",
+    "cucumber": "^5.0.2",
     "deepstream.io-client-js": "^2.3.4",
     "husky": "^3.0.9",
     "istanbul": "^0.4.5",
