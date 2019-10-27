@@ -23,7 +23,7 @@ export class E2EClusterNode extends DeepstreamPlugin implements DeepstreamCluste
         process.nextTick(() => {
             for (const [serverName, emitter] of E2EClusterNode.emitters) {
                 if (serverName !== this.config.serverName) {
-                    emitter.emit(TOPIC[message.topic], this.config.serverName, msg)
+                    emitter.emit(TOPIC[message.topic], this.config.serverName, { ...msg })
                 }
             }
         })
