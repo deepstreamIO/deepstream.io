@@ -1,7 +1,28 @@
-## [5.0.0-rc.1] - 2019.10.07
+## [5.0.0] - 2019.10.27
 
-These change logs will be updated with an immense amount of changes. Need to get an RC out first to make
-sure everything works as expected.
+### Features:
+
+- New License
+- Singular HTTP Service
+- SSL Support reintroduced
+- Better Config file validation
+- JSON Logger
+- NGINX Helper
+- Combined authentication handler
+- Embedded dependencies
+- Builtin HTTP Monitoring
+- Storage authentication endpoint
+- Guess whats back, official clustering support!
+
+### Backwards compatibility
+
+- Custom authentication plugins now have to use the async/await API
+- Custom permission handlers need to slightly tweak the function arguments
+- Deployment configuration has to be (simplified) to respect the single HTTP/Websocket port
+
+### Upgrade guide
+
+You can see the upgrade guide for backwards compatibility [here](https://deepstream.io/tutorials/upgrade-guides/v5/server/)
 
 ## [4.2.5] - 2019.10.01
 

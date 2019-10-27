@@ -190,11 +190,11 @@ logger:
 #     host: localhost
 #     port: 6379
 
-# storage:
-#   name: rethinkdb
-#   options:
-#     host: localhost
-#     port: 28015
+storage:
+  name: mongodb
+  options:
+    connectionString: mongodb://localhost
+    db: default
 
 # Authentication
 auth:
