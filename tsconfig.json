@@ -21,13 +21,14 @@
     "src/**/*",
     "src/**/*.json",
     "test-e2e/**/*",
-    "package.json"
+    "package.json", "types/uws.d.ts"
   ],
   "exclude": [
     "**/*.spec.ts",
     "node_modules"
   ],
   "files": [
-    "types/global.d.ts"
+    "types/global.d.ts",
+    "types/uws.d.ts"
   ],
 }

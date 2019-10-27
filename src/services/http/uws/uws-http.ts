@@ -1,7 +1,6 @@
 import { DeepstreamPlugin, DeepstreamHTTPService, PostRequestHandler, GetRequestHandler, DeepstreamServices, DeepstreamConfig, SocketWrapper, WebSocketConnectionEndpoint, SocketWrapperFactory, EVENT } from '../../../../ds-types/src/index'
 // import * as HTTPStatus from 'http-status'
 import { Dictionary } from 'ts-essentials'
-import * as uws from 'uWebSockets.js'
 import { STATES } from '../../../constants'
 import { PromiseDelay } from '../../../utils/utils'
 import * as fileUtils from '../../../config/file-utils'
@@ -39,12 +38,12 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
 
     const sslParams = this.getSLLParams(pluginOptions)
     if (sslParams) {
-      this.server = uws.SSLApp({
+      this.server = this.uWS.SSLApp({
         ...pluginOptions,
         ...sslParams
       })
     } else {
-      this.server = uws.App(pluginOptions)
+      this.server = this.uWS.App(pluginOptions)
     }
   }
 

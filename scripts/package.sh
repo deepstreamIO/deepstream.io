@@ -94,10 +94,10 @@ function compile {
     echo "Adding cache plugins"
     npm install --production --global-style \
         @deepstream/cache-redis \
-        # @deepstream/cache-memcached \
+        @deepstream/cache-memcached \
         # @deepstream/cache-hazelcast
 
-    echo "Adding storage plugins"
+    echo "Adding cluster plugins"
     npm install --production --global-style \
         @deepstream/clusternode-redis
 
@@ -112,7 +112,6 @@ function compile {
     rm -rf node_modules package.json
     cd -
 
-exit 0
     echo "Creating '$EXECUTABLE_NAME', this will take a while..."
     NODE_VERSION_WITHOUT_V=${NODE_VERSION_WITHOUT_V} EXECUTABLE_NAME=${EXECUTABLE_NAME} node scripts/nexe.js > /dev/null &
 
