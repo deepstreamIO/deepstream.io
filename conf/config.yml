@@ -187,14 +187,14 @@ logger:
 # cache:
 #   name: redis
 #   options:
-#     host: localhost
-#     port: 6379
+#     host: ${REDIS_HOST}
+#     port: ${REDIS_PORT}
 
-storage:
-  name: mongodb
-  options:
-    connectionString: mongodb://localhost
-    db: default
+# storage:
+#   name: mongodb
+#   options:
+#     connectionString: ${MONGO_CONNECTION_STRING}
+#     db: default
 
 # Authentication
 auth:

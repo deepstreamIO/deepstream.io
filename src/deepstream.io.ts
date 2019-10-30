@@ -169,6 +169,10 @@ export class Deepstream extends EventEmitter {
     return this.services
   }
 
+  public getConfig (): Readonly<DeepstreamConfig> {
+    return this.config
+  }
+
 /* ======================================================================= *
  * ========================== State Transitions ========================== *
  * ======================================================================= */
