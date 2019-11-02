@@ -1,6 +1,6 @@
 import { Message, TOPIC, STATE_REGISTRY_TOPIC } from '../../src/constants'
 import { EventEmitter } from 'events'
-import { DeepstreamServices, DeepstreamConfig, DeepstreamPlugin, DeepstreamClusterNode } from '../../ds-types/src/index'
+import { DeepstreamServices, DeepstreamConfig, DeepstreamPlugin, DeepstreamClusterNode } from '@deepstream/types'
 
 export class E2EClusterNode extends DeepstreamPlugin implements DeepstreamClusterNode {
     public description: string = 'E2EClusterNode'

@@ -1,5 +1,5 @@
 import * as pino from 'pino'
-import { LOG_LEVEL, DeepstreamPlugin, DeepstreamLogger, DeepstreamServices, NamespacedLogger, EVENT } from '../../../../ds-types/src'
+import { LOG_LEVEL, DeepstreamPlugin, DeepstreamLogger, DeepstreamServices, NamespacedLogger, EVENT } from '@deepstream/types'
 
 const DSToPino: { [index: number]: string } = {
     [LOG_LEVEL.DEBUG]: 'debug',

@@ -1,6 +1,6 @@
 
 import { Message, ParseResult, PARSER_ACTION, TOPIC, CONNECTION_ACTION, ALL_ACTIONS, JSONObject, AUTH_ACTION } from '../../constants'
-import { DeepstreamPlugin, SocketConnectionEndpoint, SocketWrapper, ConnectionListener, DeepstreamServices, DeepstreamConfig, EVENT, UnauthenticatedSocketWrapper } from '../../../ds-types/src'
+import { DeepstreamPlugin, SocketConnectionEndpoint, SocketWrapper, ConnectionListener, DeepstreamServices, DeepstreamConfig, EVENT, UnauthenticatedSocketWrapper } from '@deepstream/types'
 
 const OPEN = 'OPEN'
 
@@ -28,7 +28,6 @@ export default class BaseWebsocketConnectionEndpoint extends DeepstreamPlugin im
   private logInvalidAuthData: boolean = false
   private maxAuthAttempts: number = 3
   private unauthenticatedClientTimeout: number | boolean = false
-  private urlPath: string | null = null
   private connectionListener!: ConnectionListener
 
   constructor (private options: WebSocketServerConfig, protected services: DeepstreamServices, protected dsOptions: DeepstreamConfig) {
@@ -75,7 +74,6 @@ export default class BaseWebsocketConnectionEndpoint extends DeepstreamPlugin im
 
     this.maxAuthAttempts = this.options.maxAuthAttempts
     this.logInvalidAuthData = this.options.logInvalidAuthData
-    this.urlPath = this.options.urlPath
     this.unauthenticatedClientTimeout = this.options.unauthenticatedClientTimeout
 
     this.createWebsocketServer()
@@ -104,12 +102,8 @@ export default class BaseWebsocketConnectionEndpoint extends DeepstreamPlugin im
     this.flushTimeout = null
   }
 
-  /**
-   * Get a parameter from the root of the deepstream options if present, otherwise get it from the
-   * plugin config. If neither is present, default to the optionally provided default.
-   */
   protected getOption (option: string) {
-    return (this.dsOptions as any)[option] || this.options[option]
+    return this.options[option]
   }
 
   public handleParseErrors (socketWrapper: SocketWrapper, parseResults: ParseResult[]): Message[] {
@@ -138,16 +132,6 @@ export default class BaseWebsocketConnectionEndpoint extends DeepstreamPlugin im
       messages.push(message)
     }
     return messages
-  }
-
-  /**
-   * Called for the ready event of the ws server.
-   */
-  protected onReady (): void {
-    const wsMsg = `Listening for websocket connections on ${this.getOption('host')}:${this.getOption('port')}${this.urlPath}`
-    this.services.logger.info(EVENT.INFO, wsMsg)
-    const hcMsg = `Listening for health checks on path ${this.options.healthCheckPath} `
-    this.services.logger.info(EVENT.INFO, hcMsg)
   }
 
   /**

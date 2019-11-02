@@ -1,4 +1,4 @@
-import { DeepstreamPlugin, DeepstreamCache, StorageWriteCallback, StorageReadCallback, StorageHeadBulkCallback, StorageHeadCallback } from '../../../ds-types/src/index'
+import { DeepstreamPlugin, DeepstreamCache, StorageWriteCallback, StorageReadCallback, StorageHeadBulkCallback, StorageHeadCallback } from '@deepstream/types'
 import { JSONValue } from '../../constants'
 
 export class LocalCache extends DeepstreamPlugin implements DeepstreamCache {

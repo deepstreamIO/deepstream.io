@@ -2,7 +2,7 @@ import * as binaryMessageBuilder from '@deepstream/protobuf/dist/src/message-bui
 import * as binaryMessageParser from '@deepstream/protobuf/dist/src/message-parser'
 import { ParseResult, Message } from '../../../constants'
 import { WebSocketServerConfig } from '../../base/connection-endpoint'
-import { SocketConnectionEndpoint, DeepstreamServices } from '../../../../ds-types/src/index'
+import { SocketConnectionEndpoint, DeepstreamServices } from '@deepstream/types'
 import { WSSocketWrapper } from '../../base/socket-wrapper'
 
 export class WSBinarySocketWrapper extends WSSocketWrapper<Uint8Array> {

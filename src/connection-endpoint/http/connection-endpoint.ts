@@ -2,7 +2,7 @@ import JIFHandler from '../../jif/jif-handler'
 import HTTPSocketWrapper from './socket-wrapper'
 import * as HTTPStatus from 'http-status'
 import { PARSER_ACTION, AUTH_ACTION, EVENT_ACTION, RECORD_ACTION, Message, ALL_ACTIONS, JSONObject } from '../../constants'
-import { DeepstreamConnectionEndpoint, DeepstreamServices, SimpleSocketWrapper, SocketWrapper, JifResult, UnauthenticatedSocketWrapper, DeepstreamPlugin, DeepstreamConfig, EVENT, DeepstreamHTTPResponse, DeepstreamHTTPMeta, DeepstreamAuthenticationResult } from '../../../ds-types/src/index'
+import { DeepstreamConnectionEndpoint, DeepstreamServices, SimpleSocketWrapper, SocketWrapper, JifResult, UnauthenticatedSocketWrapper, DeepstreamPlugin, DeepstreamConfig, EVENT, DeepstreamHTTPResponse, DeepstreamHTTPMeta, DeepstreamAuthenticationResult } from '@deepstream/types'
 export interface HTTPEvents {
   onAuthMessage: Function
   onPostMessage: Function

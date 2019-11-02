@@ -9,7 +9,7 @@ import {
   BulkSubscriptionMessage,
   STATE_REGISTRY_TOPIC
 } from '../../constants'
-import { SocketWrapper, DeepstreamConfig, DeepstreamServices, SubscriptionListener, StateRegistry, SubscriptionRegistry, LOG_LEVEL, EVENT, NamespacedLogger } from '../../../ds-types/src/index'
+import { SocketWrapper, DeepstreamConfig, DeepstreamServices, SubscriptionListener, StateRegistry, SubscriptionRegistry, LOG_LEVEL, EVENT, NamespacedLogger } from '@deepstream/types'
 
 interface SubscriptionActions {
   MULTIPLE_SUBSCRIPTIONS: RECORD_ACTION.MULTIPLE_SUBSCRIPTIONS | EVENT_ACTION.MULTIPLE_SUBSCRIPTIONS | RPC_ACTION.MULTIPLE_PROVIDERS | PRESENCE_ACTION.MULTIPLE_SUBSCRIPTIONS
@@ -37,7 +37,7 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
    * A bit like an event-hub, only that it registers SocketWrappers rather
    * than functions
    */
-  constructor (private pluginConfig: any, private services: DeepstreamServices, private config: DeepstreamConfig, private topic: TOPIC | STATE_REGISTRY_TOPIC, clusterTopic: TOPIC) {
+  constructor (private pluginConfig: any, private services: Readonly<DeepstreamServices>, private config: Readonly<DeepstreamConfig>, private topic: TOPIC | STATE_REGISTRY_TOPIC, clusterTopic: TOPIC) {
     switch (topic) {
       case TOPIC.RECORD:
       case STATE_REGISTRY_TOPIC.RECORD_LISTEN_PATTERNS:

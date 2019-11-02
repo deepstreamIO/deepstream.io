@@ -1,4 +1,4 @@
-import { DeepstreamConfig, DeepstreamServices, SocketWrapper } from '../../../ds-types/src/index'
+import { DeepstreamConfig, DeepstreamServices, SocketWrapper } from '@deepstream/types'
 import { Message, RecordMessage, RECORD_ACTION, TOPIC } from '../../constants'
 import { isExcluded } from '../../utils/utils'
 

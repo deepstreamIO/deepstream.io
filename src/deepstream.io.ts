@@ -19,7 +19,7 @@ import * as configInitializer from './config/config-initialiser'
 import * as jsYamlLoader from './config/js-yaml-loader'
 
 import { DependencyInitialiser } from './utils/dependency-initialiser'
-import { DeepstreamConfig, DeepstreamServices, DeepstreamPlugin, PartialDeepstreamConfig, EVENT, SocketWrapper, ConnectionListener } from '../ds-types/src/index'
+import { DeepstreamConfig, DeepstreamServices, DeepstreamPlugin, PartialDeepstreamConfig, EVENT, SocketWrapper, ConnectionListener } from '@deepstream/types'
 import RecordHandler from './handlers/record/record-handler'
 import { getValue, setValue } from './utils/json-path'
 import { CombineAuthentication } from './services/authentication/combine/combine-authentication'
@@ -181,6 +181,7 @@ export class Deepstream extends EventEmitter {
  * Try to perform a state change
  */
   private transition (transitionName: string): void {
+    console.log(transitionName)
     let transition
     for (let i = 0; i < this.stateMachine.transitions.length; i++) {
       transition = this.stateMachine.transitions[i]

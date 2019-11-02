@@ -25,9 +25,6 @@
 [submodule "client"]
 	path = client
 	url = git@github.com:deepstreamIO/deepstream.io-client-js.git
-[submodule "ds-types"]
-	path = ds-types
-	url = git@github.com:deepstreamIO/deepstream.io-types.git
 [submodule "connectors/clusterNode/redis"]
 	path = connectors/clusterNode/redis
 	url = git@github.com:deepstreamIO/deepstream.io-clusternode-redis.git

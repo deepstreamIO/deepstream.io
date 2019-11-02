@@ -1,6 +1,6 @@
 import { EOL } from 'os'
 import { Message, RECORD_ACTION, PRESENCE_ACTION, EVENT_ACTION, RPC_ACTION, RecordData, TOPIC, RecordWriteMessage } from '../../../constants'
-import { PermissionCallback, ValveConfig, SocketWrapper, DeepstreamConfig, DeepstreamServices, NamespacedLogger, EVENT } from '../../../../ds-types/src/index'
+import { PermissionCallback, ValveConfig, SocketWrapper, DeepstreamConfig, DeepstreamServices, NamespacedLogger, EVENT } from '@deepstream/types'
 import { recordRequest } from '../../../handlers/record/record-request'
 import RecordHandler from '../../../handlers/record/record-handler'
 import { setValue } from '../../../utils/json-path'

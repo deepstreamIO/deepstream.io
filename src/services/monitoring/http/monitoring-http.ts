@@ -1,6 +1,6 @@
 import { Message, ACTIONS } from '@deepstream/protobuf/dist/types/messages'
 import { TOPIC, STATE_REGISTRY_TOPIC } from '@deepstream/protobuf/dist/types/all'
-import { DeepstreamMonitoring, DeepstreamPlugin, DeepstreamServices, LOG_LEVEL, EVENT, DeepstreamHTTPMeta, DeepstreamHTTPResponse } from '../../../../ds-types/src'
+import { DeepstreamMonitoring, DeepstreamPlugin, DeepstreamServices, LOG_LEVEL, EVENT, DeepstreamHTTPMeta, DeepstreamHTTPResponse } from '@deepstream/types'
 
 interface HTTPMonitoringOptions {
     url: string

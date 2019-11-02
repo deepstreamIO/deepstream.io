@@ -1,4 +1,4 @@
-import { PartialDeepstreamConfig, LOG_LEVEL } from '../../ds-types/src/index'
+import { PartialDeepstreamConfig, LOG_LEVEL } from '@deepstream/types'
 import * as permissions from '../config/permissions-open.json'
 
 export const getServerConfig = (port: number): PartialDeepstreamConfig => ({

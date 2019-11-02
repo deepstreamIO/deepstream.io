@@ -1,5 +1,5 @@
 import * as crypto from 'crypto'
-import { DeepstreamPlugin, DeepstreamAuthentication, DeepstreamServices, EVENT, DeepstreamAuthenticationResult } from '../../../../ds-types/src/index'
+import { DeepstreamPlugin, DeepstreamAuthentication, DeepstreamServices, EVENT, DeepstreamAuthenticationResult } from '@deepstream/types'
 import * as uuid from 'uuid'
 import { Dictionary } from 'ts-essentials'
 

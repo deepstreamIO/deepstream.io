@@ -1,7 +1,7 @@
 import { spy, assert } from 'sinon'
 import { expect } from 'chai'
 import { FileBasedAuthentication } from './file-based-authentication'
-import { DeepstreamServices, EVENT } from '../../../../ds-types/src/index'
+import { DeepstreamServices, EVENT } from '@deepstream/types'
 import { PromiseDelay } from '../../../utils/utils'
 
 import * as users from '../../../test/config/users.json'

@@ -1,4 +1,4 @@
-import { DeepstreamPlugin, DeepstreamAuthentication } from '../../../../ds-types/src/index'
+import { DeepstreamPlugin, DeepstreamAuthentication } from '@deepstream/types'
 import { JSONObject } from '../../../constants'
 
 /**

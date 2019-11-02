@@ -1,5 +1,5 @@
 import { getUid } from './utils/utils'
-import { DeepstreamConfig, LOG_LEVEL } from '../ds-types/src/index'
+import { DeepstreamConfig, LOG_LEVEL } from '@deepstream/types'
 
 const WebSocketDefaultOptions = {
   urlPath: '/deepstream',

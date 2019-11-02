@@ -1,7 +1,7 @@
 import { ParseResult, Message } from '../../../constants'
 import * as textMessageBuilder from './text-protocol/message-builder'
 import * as textMessageParse from './text-protocol/message-parser'
-import { SocketConnectionEndpoint, DeepstreamServices } from '../../../../ds-types/src/index'
+import { SocketConnectionEndpoint, DeepstreamServices } from '@deepstream/types'
 import { WebSocketServerConfig } from '../../base/connection-endpoint'
 import { WSSocketWrapper } from '../../base/socket-wrapper'
 

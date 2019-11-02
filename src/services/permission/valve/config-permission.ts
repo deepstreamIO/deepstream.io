@@ -5,7 +5,7 @@ import RuleCache from './rule-cache'
 import * as rulesMap from './rules-map'
 import { Message, RECORD_ACTION, EVENT_ACTION, RPC_ACTION, PRESENCE_ACTION } from '../../../constants'
 import RecordHandler from '../../../handlers/record/record-handler'
-import { DeepstreamPlugin, DeepstreamPermission, ValveConfig, DeepstreamServices, DeepstreamConfig, PermissionCallback, SocketWrapper, EVENT, ValveSchema } from '../../../../ds-types/src/index'
+import { DeepstreamPlugin, DeepstreamPermission, ValveConfig, DeepstreamServices, DeepstreamConfig, PermissionCallback, SocketWrapper, EVENT, ValveSchema } from '@deepstream/types'
 
 const UNDEFINED = 'undefined'
 
@@ -29,7 +29,7 @@ export class ConfigPermission extends DeepstreamPlugin implements DeepstreamPerm
    * with the default permission.yml it allows everything, but at the same time provides
    * a convenient starting point for permission declarations.
    */
-  constructor (private permissionOptions: ValveConfig, private services: DeepstreamServices, private config: DeepstreamConfig) {
+  constructor (private permissionOptions: ValveConfig, private services: Readonly<DeepstreamServices>, private config: Readonly<DeepstreamConfig>) {
     super()
     this.ruleCache = new RuleCache(this.permissionOptions)
 

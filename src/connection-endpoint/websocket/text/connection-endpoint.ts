@@ -1,7 +1,7 @@
 import { WebSocketServerConfig } from '../../base/connection-endpoint'
 import BaseWebsocketConnectionEndpoint from '../../base/connection-endpoint'
 import {createWSSocketWrapper} from './socket-wrapper-factory'
-import { DeepstreamServices, DeepstreamConfig, UnauthenticatedSocketWrapper, WebSocketConnectionEndpoint } from '../../../../ds-types/src/index'
+import { DeepstreamServices, DeepstreamConfig, UnauthenticatedSocketWrapper, WebSocketConnectionEndpoint } from '@deepstream/types'
 import * as textMessageBuilder from './text-protocol/message-builder'
 import { TOPIC, CONNECTION_ACTION } from '../../../constants'
 

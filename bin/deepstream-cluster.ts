@@ -1,7 +1,7 @@
 // @ts-ignore
 import * as commander from 'commander'
 import * as cluster from 'cluster'
-import { EVENT } from '../ds-types/src/index'
+import { EVENT } from '@deepstream/types'
 
 // work-around for:
 // TS4023: Exported variable 'command' has or is using name 'local.Command'

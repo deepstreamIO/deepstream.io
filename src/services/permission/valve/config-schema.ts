@@ -1,4 +1,4 @@
-import { ConfigSchema } from '../../../../ds-types/src'
+import { ConfigSchema } from '@deepstream/types'
 
 export const SCHEMA: ConfigSchema = {
   record: {

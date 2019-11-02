@@ -1,6 +1,6 @@
 import * as pathParser from './path-parser'
 import * as ruleParser from './rule-parser'
-import { ValveSchema } from '../../../../ds-types/src'
+import { ValveSchema } from '@deepstream/types'
 
 /**
  * Compiles a pre-validated config into a format that allows for quicker access

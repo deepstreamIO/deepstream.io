@@ -1,4 +1,4 @@
-import { DeepstreamPlugin, DeepstreamAuthenticationCombiner, DeepstreamAuthentication, UserAuthenticationCallback } from '../../../../ds-types/src/index'
+import { DeepstreamPlugin, DeepstreamAuthenticationCombiner, DeepstreamAuthentication, UserAuthenticationCallback } from '@deepstream/types'
 import { JSONObject } from '../../../constants'
 
 /**

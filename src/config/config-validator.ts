@@ -1,7 +1,7 @@
 import * as Ajv from 'ajv'
 import * as betterAjvErrors from 'better-ajv-errors'
 
-import { LOG_LEVEL } from '../../ds-types/src/index'
+import { LOG_LEVEL } from '@deepstream/types'
 
 const LogLevelValidation = {
   type: ['string', 'integer'],

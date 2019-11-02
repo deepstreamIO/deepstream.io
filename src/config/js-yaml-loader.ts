@@ -4,7 +4,7 @@ import * as path from 'path'
 
 import { get as getDefaultOptions } from '../default-options'
 import { merge } from '../utils/utils'
-import { DeepstreamConfig, LOG_LEVEL, EVENT } from '../../ds-types/src/index'
+import { DeepstreamConfig, LOG_LEVEL, EVENT } from '@deepstream/types'
 import Deepstream from '../deepstream.io'
 import * as configInitializer from './config-initialiser'
 import * as fileUtils from './file-utils'

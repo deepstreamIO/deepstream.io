@@ -6,7 +6,7 @@ import * as testHelper from '../test/helper/test-helper'
 import * as C from '../constants'
 import { getTestMocks } from '../test/helper/test-mocks'
 import * as sinon from 'sinon'
-import { SocketWrapper, SubscriptionRegistry } from '../../ds-types/src/index'
+import { SocketWrapper, SubscriptionRegistry } from '@deepstream/types'
 import { TOPIC, ListenMessage } from '../constants'
 
 export default class ListenerTestUtils {

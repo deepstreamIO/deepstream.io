@@ -1,5 +1,5 @@
 import * as crypto from 'crypto'
-import { DeepstreamPlugin, DeepstreamAuthentication, DeepstreamServices, EVENT } from '../../../../ds-types/src/index'
+import { DeepstreamPlugin, DeepstreamAuthentication, DeepstreamServices, EVENT } from '@deepstream/types'
 import { validateMap } from '../../../utils/utils'
 
 const STRING = 'string'

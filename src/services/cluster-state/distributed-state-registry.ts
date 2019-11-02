@@ -1,5 +1,5 @@
 import { TOPIC, STATE_ACTION, StateMessage } from '../../constants'
-import { DeepstreamServices, StateRegistry, StateRegistryCallback, DeepstreamConfig, EVENT } from '../../../ds-types/src/index'
+import { DeepstreamServices, StateRegistry, StateRegistryCallback, DeepstreamConfig, EVENT } from '@deepstream/types'
 import { Dictionary } from 'ts-essentials'
 import { EventEmitter } from 'events'
 
@@ -31,7 +31,7 @@ export class DistributedStateRegistry implements StateRegistry {
   /**
    * Initializes the DistributedStateRegistry and subscribes to the provided cluster topic
    */
-  constructor (private topic: TOPIC, private stateOptions: any, private services: DeepstreamServices, private config: DeepstreamConfig) {
+  constructor (private topic: TOPIC, private stateOptions: any, private services: Readonly<DeepstreamServices>, private config: Readonly<DeepstreamConfig>) {
     this.resetFullStateSent = this.resetFullStateSent.bind(this)
     this.services.clusterNode.subscribe(TOPIC.STATE_REGISTRY, this.processIncomingMessage.bind(this))
 

@@ -1,5 +1,5 @@
 import { createMQTTSocketWrapper} from './socket-wrapper-factory'
-import { DeepstreamServices, SocketWrapper, DeepstreamConfig, UnauthenticatedSocketWrapper } from '../../../ds-types/src/index'
+import { DeepstreamServices, SocketWrapper, DeepstreamConfig, UnauthenticatedSocketWrapper, EVENT } from '@deepstream/types'
 import ConnectionEndpoint, { WebSocketServerConfig } from '../base/connection-endpoint'
 
 import { Server } from 'net'
@@ -7,6 +7,7 @@ import { Server } from 'net'
 import * as mqttCon from 'mqtt-connection'
 import { TOPIC, CONNECTION_ACTION, AUTH_ACTION } from '../../constants'
 import { Message } from '@deepstream/client/dist/constants'
+import { EventEmitter } from 'events'
 
 export interface MQTTConnectionEndpointConfig extends WebSocketServerConfig {
   port: number,
@@ -27,10 +28,23 @@ export class MQTTConnectionEndpoint extends ConnectionEndpoint {
   private connections = new Map<MQTTConnection, UnauthenticatedSocketWrapper>()
   private logger = this.services.logger.getNameSpace('MQTT')
 
+  private isReady: boolean = false
+  private emitter = new EventEmitter()
+
   constructor (private mqttOptions: MQTTConnectionEndpointConfig, services: DeepstreamServices, config: DeepstreamConfig) {
     super(mqttOptions, services, config)
     this.description = 'MQTT Protocol Connection Endpoint'
     this.onMessages = this.onMessages.bind(this)
+  }
+
+  public async whenReady (): Promise<void> {
+    if (!this.isReady) {
+      return new Promise((resolve) => this.emitter.once('ready', resolve))
+    }
+  }
+
+  public async close () {
+
   }
 
   /**
@@ -79,7 +93,6 @@ export class MQTTConnectionEndpoint extends ConnectionEndpoint {
       client.on('close', closeClient)
 
       client.on('error', (e: any) => {
-        console.log(e)
         this.logger.error('CLIENT ERROR', e.toString())
         closeClient()
       })
@@ -111,7 +124,11 @@ export class MQTTConnectionEndpoint extends ConnectionEndpoint {
       })
     })
 
-    this.server.listen(this.mqttOptions.port, this.mqttOptions.host, this.onReady.bind(this))
+    this.server.listen(this.mqttOptions.port, this.mqttOptions.host, () => {
+      this.services.logger.info(EVENT.INFO, `Listening for MQTT connections on ${this.mqttOptions.host}:${this.mqttOptions.port}`)
+      this.isReady = true
+      this.emitter.emit('ready')
+    })
 
     return this.server
   }

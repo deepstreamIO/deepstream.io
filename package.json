@@ -59,6 +59,7 @@
   },
   "devDependencies": {
     "@deepstream/client": "^5.0.0",
+    "@deepstream/types": "^2.0.4",
     "@types/adm-zip": "^0.4.32",
     "@types/body-parser": "^1.17.1",
     "@types/content-type": "^1.1.3",

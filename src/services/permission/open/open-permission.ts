@@ -1,5 +1,5 @@
 import { Message } from '../../../constants'
-import { DeepstreamPlugin, DeepstreamPermission, PermissionCallback, SocketWrapper } from '../../../../ds-types/src/index'
+import { DeepstreamPlugin, DeepstreamPermission, PermissionCallback, SocketWrapper } from '@deepstream/types'
 
 /**
  * The open permission handler allows any action to occur without applying

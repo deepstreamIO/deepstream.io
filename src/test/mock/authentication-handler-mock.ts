@@ -1,4 +1,4 @@
-import { DeepstreamPlugin, DeepstreamAuthentication, DeepstreamAuthenticationResult } from '../../../ds-types/src/index'
+import { DeepstreamPlugin, DeepstreamAuthentication, DeepstreamAuthenticationResult } from '@deepstream/types'
 
 export default class AuthenticationMock extends DeepstreamPlugin implements DeepstreamAuthentication {
   public onClientDisconnectCalledWith: string | null = null

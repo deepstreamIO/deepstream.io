@@ -1,6 +1,6 @@
 import {EventEmitter} from 'events'
 import Timeout = NodeJS.Timeout
-import { DeepstreamPlugin, DeepstreamLockRegistry, DeepstreamServices, DeepstreamConfig, LockCallback, EVENT } from '../../../ds-types/src/index'
+import { DeepstreamPlugin, DeepstreamLockRegistry, DeepstreamServices, DeepstreamConfig, LockCallback, EVENT } from '@deepstream/types'
 import { TOPIC, LOCK_ACTION, LockMessage } from '../../constants'
 
 /**
@@ -23,7 +23,7 @@ export class DistributedLockRegistry extends DeepstreamPlugin implements Deepstr
    * within deepstream.io. It is passed via
    * via the options object.
    */
-  constructor (private pluginOptions: any, private services: DeepstreamServices, private config: DeepstreamConfig) {
+  constructor (private pluginOptions: any, private services: Readonly<DeepstreamServices>, private config: Readonly<DeepstreamConfig>) {
     super()
     this.onPrivateMessage =  this.onPrivateMessage.bind(this)
   }
