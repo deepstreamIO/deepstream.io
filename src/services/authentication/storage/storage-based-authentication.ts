@@ -1,10 +1,9 @@
-import * as crypto from 'crypto'
 import { DeepstreamPlugin, DeepstreamAuthentication, DeepstreamServices, EVENT, DeepstreamAuthenticationResult } from '@deepstream/types'
 import * as uuid from 'uuid'
 import { Dictionary } from 'ts-essentials'
+import { createHash } from '../../../utils/utils'
 
 const STRING = 'string'
-const STRING_CHARSET = 'base64'
 
 interface StorageAuthConfig {
   reportInvalidParameters: boolean,
@@ -31,6 +30,11 @@ export class StorageBasedAuthentication extends DeepstreamPlugin implements Deep
   private base64KeyLength: number
 
   private logger = this.services.logger.getNameSpace('STORAGE_AUTH')
+  private hashSettings = {
+      iterations: this.settings.iterations,
+      keyLength: this.settings.keyLength,
+      algorithm: this.settings.hash
+  }
 
   /**
   * Creates the class, reads and validates the users.json file
@@ -77,8 +81,7 @@ export class StorageBasedAuthentication extends DeepstreamPlugin implements Deep
     if (userData === null) {
       if (this.settings.createUser) {
         this.logger.info(EVENT.REGISTERING_USER, `Adding new user ${authData.username}`)
-        const salt = crypto.randomBytes(16).toString(STRING_CHARSET)
-        const hash = await this.createHash(authData.password, salt)
+        const { hash, salt } = await createHash(authData.password, this.hashSettings)
         const clientData = {
           id: uuid(),
         }
@@ -103,9 +106,9 @@ export class StorageBasedAuthentication extends DeepstreamPlugin implements Deep
     }
 
     const expectedHash = userData.password.substr(0, this.base64KeyLength)
-    const actualHash = await this.createHash(authData.password, userData.password.substr(this.base64KeyLength))
+    const { hash: actualHash } = await createHash(authData.password, this.hashSettings, userData.password.substr(this.base64KeyLength))
 
-    if (expectedHash === actualHash) {
+    if (expectedHash === actualHash.toString('base64')) {
       return {
         isValid: true,
         id: userData.clientData.id,
@@ -116,23 +119,4 @@ export class StorageBasedAuthentication extends DeepstreamPlugin implements Deep
 
     return { isValid: false }
   }
-
-  /**
-  * Utility method for creating hashes including salts based on
-  * the provided parameters
-  */
- public createHash (password: string, salt: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    crypto.pbkdf2(
-      password,
-      salt,
-      this.settings.iterations,
-      this.settings.keyLength,
-      this.settings.hash,
-      (err, hash) => {
-        err ? reject(err) : resolve(hash.toString(STRING_CHARSET))
-      }
-    )
-  })
-}
 }

@@ -2,6 +2,7 @@ import 'mocha'
 import {spy} from 'sinon'
 import {expect} from 'chai'
 import { EventEmitter } from 'events'
+import { createHash } from './utils';
 const utils = require('./utils')
 
 describe('utils', () => {
@@ -206,5 +207,17 @@ describe('utils', () => {
         }
       })
     })
+  })
+
+  it('creates a hash', async() => {
+    const password = 'userAPass'
+    const settings = {
+      algorithm: 'md5',
+      iterations: 100,
+      keyLength: 32
+    }
+    const { hash, salt } = await createHash(password, settings)
+    const { hash: hashCheck } = await createHash(password, settings, salt)
+    expect(hash.toString('base64')).to.eq(hashCheck.toString('base64'))
   })
 })

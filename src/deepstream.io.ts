@@ -181,7 +181,6 @@ export class Deepstream extends EventEmitter {
  * Try to perform a state change
  */
   private transition (transitionName: string): void {
-    console.log(transitionName)
     let transition
     for (let i = 0; i < this.stateMachine.transitions.length; i++) {
       transition = this.stateMachine.transitions[i]

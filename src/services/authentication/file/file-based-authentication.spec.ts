@@ -189,29 +189,6 @@ describe('file based authentication', () => {
     })
   })
 
-  describe('creates hashes', () => {
-    let authenticationHandler
-    const settings = {
-      users,
-      hash: 'md5',
-      iterations: 100,
-      keyLength: 32
-    }
-
-    beforeEach(async () => {
-      authenticationHandler = new FileBasedAuthentication(settings, createServices())
-      await authenticationHandler.whenReady()
-    })
-
-    it('creates a hash', (done) => {
-      authenticationHandler.createHash('userAPass', (err, result) => {
-        expect(err).to.eq(null)
-        expect(typeof result).to.eq('string')
-        done()
-      })
-    })
-  })
-
   describe('errors for invalid configs', () => {
     const test = async (settings: any, errorMessage: string) => {
       const services = createServices()

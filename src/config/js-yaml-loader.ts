@@ -52,7 +52,10 @@ export const readAndParseFile = function (filePath: string, callback: Function):
  * Loads a config file without having to initialize it. Useful for one
  * off operations such as generating a hash via cli
  */
-export const loadConfigWithoutInitialization = async function (filePath: string | null = null, initialLogs: InitialLogs = [], args?: object): Promise<any> {
+export const loadConfigWithoutInitialization = async function (filePath: string | null = null, initialLogs: InitialLogs = [], args?: object): Promise<{
+  config: DeepstreamConfig,
+  configPath: string
+}> {
   // @ts-ignore
   const argv = args || global.deepstreamCLI || {}
   const configPath = setGlobalConfigDirectory(argv, filePath)

@@ -1,6 +1,6 @@
 import * as jsYamlLoader from '../src/config/js-yaml-loader'
 import * as commander from 'commander'
-import { FileBasedAuthentication } from '../src/services/authentication/file/file-based-authentication'
+import { createHash } from '../src/utils/utils'
 
 // work-around for:
 // TS4023: Exported variable 'command' has or is using name 'local.Command'
@@ -21,32 +21,31 @@ async function action (this: any, password: string) {
   global.deepstreamCLI = this
   const config = (await jsYamlLoader.loadConfigWithoutInitialization()).config
 
-  if (config.auth.type !== 'file') {
+  const fileAuthHandlerConfig = config.auth.find((auth) => auth.type === 'file')
+
+  if (fileAuthHandlerConfig === undefined) {
     console.error('Error: Can only use hash with file authentication as auth type')
-    process.exit(1)
+    return process.exit(1)
   }
 
-  if (!config.auth.options.hash) {
+  if (!fileAuthHandlerConfig.options.hash) {
     console.error('Error: Can only use hash with file authentication')
-    process.exit(1)
+    return process.exit(1)
   }
 
-  config.auth.options.path = ''
+  fileAuthHandlerConfig.options.path = ''
 
   if (!password) {
     console.error('Error: Must provide password to hash')
-    process.exit(1)
+    return process.exit(1)
   }
 
-  // Mock file loading since a users.yml file is not required
-  // jsYamlLoader.readAndParseFile = function () {}
-
-  const fileAuthenticationHandler = new FileBasedAuthentication(config.auth.options, {} as any)
-  fileAuthenticationHandler.createHash(password, (err: Error, passwordHash: string) => {
-    if (err) {
-      console.error('Hash could not be created', err)
-      process.exit(1)
-    }
-    console.log('Password hash:', passwordHash)
-  })
+  const { iterations, keyLength, hash: algorithm } = fileAuthHandlerConfig.options
+  try {
+    const { hash: generatedHash, salt } = await createHash(password, { iterations, keyLength, algorithm })
+    console.log(`Password hash: ${generatedHash.toString('base64')}${salt}`)
+  } catch (e) {
+    console.error('Hash could not be created', e)
+    process.exit(1)
+  }
 }

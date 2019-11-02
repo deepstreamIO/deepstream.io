@@ -4,7 +4,7 @@ import * as path from 'path'
 import * as defaultConfig from '../default-options'
 import * as configInitialiser from './config-initialiser'
 import { EventEmitter } from 'events'
-import { LOG_LEVEL } from '../../ds-types/src';
+import { LOG_LEVEL } from '@deepstream/types'
 
 describe('config-initializer', () => {
   before(() => {

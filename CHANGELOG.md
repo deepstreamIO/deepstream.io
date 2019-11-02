@@ -1,4 +1,12 @@
 ## [5.0.0] - 2019.10.27
+## [5.0.1] - 2019.11.02
+
+### Fixes
+
+- Fixes odd types cripting issue breaking plugin interfaces when using `deepstream.getServices()`
+- Fixes hash generation via CLI [#1025](https://github.com/deepstreamIO/deepstream.io/issues/1025)
+
+## [5.0.0] - 2019.10.27
 
 ### Features:
 

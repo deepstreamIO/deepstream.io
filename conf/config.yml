@@ -198,7 +198,7 @@ logger:
 
 # Authentication
 auth:
-  - type: none
+  # - type: none
 
   # # reading users and passwords from the storage layer
   # - type: storage
@@ -216,16 +216,16 @@ auth:
   #     # the length of the resulting key
   #     # keyLength: 32
 
-  # - type: file
-  #   options:
-  #     # Path to the user file. Can be json, js or yml
-  #     users: fileLoad(users.yml)
-  #     # the name of a HMAC digest algorithm
-  #     hash: 'md5'
-  #     # the number of times the algorithm should be applied
-  #     iterations: 100
-  #     # the length of the resulting key
-  #     keyLength: 32
+  - type: file
+    options:
+      # Path to the user file. Can be json, js or yml
+      users: fileLoad(users.yml)
+      # the name of a HMAC digest algorithm
+      hash: 'md5'
+      # the number of times the algorithm should be applied
+      iterations: 100
+      # the length of the resulting key
+      keyLength: 32
 
   # # getting permissions from a http webhook
   # - type: http

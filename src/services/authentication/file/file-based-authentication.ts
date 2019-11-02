@@ -1,9 +1,5 @@
-import * as crypto from 'crypto'
 import { DeepstreamPlugin, DeepstreamAuthentication, DeepstreamServices, EVENT } from '@deepstream/types'
-import { validateMap } from '../../../utils/utils'
-
-const STRING = 'string'
-const STRING_CHARSET = 'base64'
+import { validateMap, createHash, validateHashingAlgorithm } from '../../../utils/utils'
 
 interface FileAuthConfig {
   users: any
@@ -25,6 +21,11 @@ interface FileAuthConfig {
 export class FileBasedAuthentication extends DeepstreamPlugin implements DeepstreamAuthentication {
   public description: string = 'File Authentication'
   private base64KeyLength: number
+  private hashSettings = {
+    iterations: this.settings.iterations,
+    keyLength: this.settings.keyLength,
+    algorithm: this.settings.hash
+  }
 
   /**
   * Creates the class, reads and validates the users.json file
@@ -42,8 +43,8 @@ export class FileBasedAuthentication extends DeepstreamPlugin implements Deepstr
   * Main interface. Authenticates incoming connections
   */
   public async isValidUser (connectionData: any, authData: any) {
-    const missingUsername = typeof authData.username !== STRING
-    const missingPassword = typeof authData.password !== STRING
+    const missingUsername = typeof authData.username !== 'string'
+    const missingPassword = typeof authData.password !== 'string'
 
     if (missingPassword || missingUsername) {
       if (this.settings.reportInvalidParameters) {
@@ -66,18 +67,8 @@ export class FileBasedAuthentication extends DeepstreamPlugin implements Deepstr
     let expectedPassword = authData.password
 
     if (typeof this.settings.hash === 'string') {
-      const salt = userData.password.substr(this.base64KeyLength)
-
-      expectedPassword = await new Promise((resolve, reject) => crypto.pbkdf2(
-        authData.password,
-        salt,
-        this.settings.iterations,
-        this.settings.keyLength,
-        this.settings.hash as string,
-        (err, hash) => err ? reject(err) : resolve(hash)
-      ))
-
-      expectedPassword = expectedPassword.toString(STRING_CHARSET)
+      ({ hash: expectedPassword} = await createHash(authData.password, this.hashSettings as any, userData.password.substr(this.base64KeyLength)))
+      expectedPassword = expectedPassword.toString('base64')
     }
 
     if (actualPassword === expectedPassword) {
@@ -93,25 +84,6 @@ export class FileBasedAuthentication extends DeepstreamPlugin implements Deepstr
   }
 
   /**
-  * Utility method for creating hashes including salts based on
-  * the provided parameters
-  */
-  public createHash (password: string, callback: Function): void {
-    const salt = crypto.randomBytes(16).toString(STRING_CHARSET)
-
-    crypto.pbkdf2(
-        password,
-        salt,
-        this.settings.iterations,
-        this.settings.keyLength,
-        this.settings.hash as string,
-        (err, hash) => {
-          callback(err || null, hash.toString(STRING_CHARSET) + salt)
-        },
-    )
-  }
-
-  /**
   * Called initially to validate the user provided settings
   */
   private validateSettings (settings: FileAuthConfig) {
@@ -122,9 +94,7 @@ export class FileBasedAuthentication extends DeepstreamPlugin implements Deepstr
           iterations: 'number',
           keyLength: 'number',
         })
-        if (crypto.getHashes().indexOf(settings.hash) === -1) {
-          throw new Error(`Unknown Hash ${settings.hash}`)
-        }
+        validateHashingAlgorithm(settings.hash)
       }
     } catch (e) {
       this.services.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, 'Validating settings failed for file auth', e.message)
@@ -136,7 +106,7 @@ export class FileBasedAuthentication extends DeepstreamPlugin implements Deepstr
     }
 
     for (const username in this.settings.users) {
-      if (typeof settings.users[username].password !== STRING) {
+      if (typeof settings.users[username].password !== 'string') {
         this.services.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, `missing password for ${username}`)
       }
     }

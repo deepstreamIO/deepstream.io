@@ -1,4 +1,5 @@
 import * as url from 'url'
+import * as crypto from 'crypto'
 
 /**
  * Returns a unique identifier
@@ -163,4 +164,29 @@ export const isExcluded = function (exclusionPrefixes: string[], recordName: str
 
 export const PromiseDelay = (timeout: number) => {
   return new Promise((resolve) => setTimeout(resolve, timeout))
+}
+
+ /**
+  * Utility method for creating hashes including salts based on
+  * the provided parameters
+  */
+export const createHash = (password: string, settings: { iterations: number, keyLength: number, algorithm: string }, salt: string = crypto.randomBytes(16).toString('base64')): Promise<{ hash: Buffer, salt: string}> => {
+  return new Promise((resolve, reject) => {
+    crypto.pbkdf2(
+      password,
+      salt,
+      settings.iterations,
+      settings.keyLength,
+      settings.algorithm,
+      (err, hash) => {
+        err ? reject(err) : resolve({ hash, salt })
+      }
+    )
+  })
+}
+
+export const validateHashingAlgorithm = (hash: string): void => {
+  if (crypto.getHashes().indexOf(hash) === -1) {
+    throw new Error(`Unknown Hash ${hash}`)
+  }
 }
