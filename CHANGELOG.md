@@ -1,9 +1,13 @@
 ## [5.0.0] - 2019.10.27
 ## [5.0.1] - 2019.11.02
 
+### Features
+
+- Replaces ENV variables in config loaded using fileLoader [#1022](https://github.com/deepstreamIO/deepstream.io/issues/1022)
+
 ### Fixes
 
-- Fixes odd types cripting issue breaking plugin interfaces when using `deepstream.getServices()`
+- Fixes odd types scripting issue breaking plugin interfaces when using `deepstream.getServices()`
 - Fixes hash generation via CLI [#1025](https://github.com/deepstreamIO/deepstream.io/issues/1025)
 
 ## [5.0.0] - 2019.10.27

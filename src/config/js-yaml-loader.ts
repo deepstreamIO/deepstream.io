@@ -231,6 +231,7 @@ async function loadFiles (fileContent: string, initialLogs: InitialLogs): Promis
             err ? reject(err) : resolve(data)
           })
         )
+        content = replaceEnvironmentVariables(content)
         try {
           if (['.yml', '.yaml', '.js', '.json'].includes(path.extname(filename))) {
             content = parseFile(filename, content)
