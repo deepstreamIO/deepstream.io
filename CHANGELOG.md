@@ -1,13 +1,8 @@
-## [5.0.3] - 2019.11.04
-
-### Fix
-
-- Production only dependency did not include ds-types
-
 ## [5.0.2] - 2019.11.04
 
 ### Fix
 
+- Production only dependency did not include ds-types
 - Close down MQTT server on stop
 
 ## [5.0.1] - 2019.11.02
