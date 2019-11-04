@@ -43,8 +43,8 @@ export class MQTTConnectionEndpoint extends ConnectionEndpoint {
     }
   }
 
-  public async close () {
-
+  public async close (): Promise<void> {
+    return new Promise((resolve) => this.server.close(() => resolve()))
   }
 
   /**
