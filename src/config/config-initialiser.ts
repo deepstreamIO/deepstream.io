@@ -32,6 +32,7 @@ import { get as getDefaultOptions } from '../default-options'
 import Deepstream from '../deepstream.io'
 import { NodeHTTP } from '../services/http/node/node-http'
 import HTTPMonitoring from '../services/monitoring/http/monitoring-http'
+import LogMonitoring from '../services/monitoring/log/monitoring-log'
 import { InitialLogs } from './js-yaml-loader'
 import * as configValidator from './config-validator'
 
@@ -401,7 +402,8 @@ function handleMonitoring (config: DeepstreamConfig, services: DeepstreamService
   const monitoringPlugins = {
     default: NoopMonitoring,
     none: NoopMonitoring,
-    http: HTTPMonitoring
+    http: HTTPMonitoring,
+    log: LogMonitoring
   }
 
   if (config.monitoring.name || config.monitoring.path) {

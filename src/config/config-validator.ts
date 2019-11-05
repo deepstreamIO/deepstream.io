@@ -180,7 +180,7 @@ const connEndpointsOptions = {
 
 const loggerOptions = getPluginOptions(
   'logger',
-  ['default'],
+  ['default', 'json'],
   {
     colors: { type: 'boolean' },
     logLevel: LogLevelValidation,
@@ -198,7 +198,7 @@ const subscriptionsOptions = getPluginOptions(
 
 const monitoringOptions = getPluginOptions(
   'monitoring',
-  ['http', 'none'],
+  ['http', 'log', 'none'],
   {
   }
 )

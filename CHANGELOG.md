@@ -1,3 +1,10 @@
+## [5.0.3] - 2019.11.05
+
+### Feat
+
+- Adding a log monitoring plugin, useful for kibana log forwarding
+- Adding header authentication for http monitoring
+
 ## [5.0.2] - 2019.11.04
 
 ### Fix
