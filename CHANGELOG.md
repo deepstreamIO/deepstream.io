@@ -1,3 +1,10 @@
+
+## [5.0.4] - 2019.11.05
+
+### Fix
+
+- Provide all HTTP headers to auth endpoint when using ws
+
 ## [5.0.3] - 2019.11.05
 
 ### Feat

@@ -62,9 +62,6 @@ httpServer:
     # a list of allowed origins
     origins:
       - 'https://example.com'
-    # Headers to copy over from websocket
-    headers:
-      - user-agent
     # Options required to create an ssl app
     # ssl:
     #   key: fileLoad(ssl/key.pem)

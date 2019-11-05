@@ -170,7 +170,7 @@ export class NodeHTTP extends DeepstreamPlugin implements DeepstreamHTTPService 
         wss.handleUpgrade(request, socket, head, (ws) => {
           wss.emit('connection', ws, {
             remoteAddress: request.headers['x-forwarded-for'] || request.connection.remoteAddress,
-            headers: this.getHeaders(this.pluginOptions.headers, request),
+            headers: request.headers,
             referer: request.headers.referer
           })
         })
@@ -375,13 +375,4 @@ export class NodeHTTP extends DeepstreamPlugin implements DeepstreamHTTPService 
       response.end()
     }
   }
-
-  public getHeaders (desiredHeaders: string[] = [], req: http.IncomingMessage) {
-    const headers: Dictionary<string> = {}
-    for (const wantedHeader of desiredHeaders) {
-      headers[wantedHeader] = req.headers[wantedHeader] as string
-    }
-    return headers
-  }
-
 }
