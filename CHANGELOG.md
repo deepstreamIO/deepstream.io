@@ -1,4 +1,11 @@
 
+
+## [5.0.5] - 2019.11.24
+
+### Fix
+
+- Fixed critical issue where invalid websocket frames kill server
+
 ## [5.0.4] - 2019.11.05
 
 ### Fix

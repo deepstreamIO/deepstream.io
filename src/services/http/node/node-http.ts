@@ -126,6 +126,10 @@ export class NodeHTTP extends DeepstreamPlugin implements DeepstreamHTTPService 
   public registerWebsocketEndpoint (path: string, createSocketWrapper: SocketWrapperFactory, webSocketConnectionEndpoint: WebSocketConnectionEndpoint) {
     const server = new WebSocket.Server({ noServer: true })
     server.on('connection', (websocket: WebSocket, handshakeData: SocketHandshakeData) => {
+      websocket.on('error', (error) => {
+        this.services.logger.error(EVENT.ERROR, `Error on websocket: ${error.message}`)
+      })
+
       const socketWrapper = createSocketWrapper(websocket, handshakeData, this.services, webSocketConnectionEndpoint.wsOptions, webSocketConnectionEndpoint)
       this.connections.set(websocket, socketWrapper)
 
@@ -143,7 +147,6 @@ export class NodeHTTP extends DeepstreamPlugin implements DeepstreamHTTPService 
 
       webSocketConnectionEndpoint.onConnection.call(webSocketConnectionEndpoint, socketWrapper)
     })
-
     this.upgradePaths.set(path, server)
     this.sortedUpgradePaths = [...this.upgradePaths.keys()].sort().reverse()
   }
