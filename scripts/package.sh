@@ -108,6 +108,10 @@ function compile {
         @deepstream/storage-elasticsearch \
         @deepstream/storage-postgres
     
+    echo "Adding logger plugins"
+    npm install --production --global-style \
+        @deepstream/logger-winston
+
     mv node_modules/* .
     rm -rf node_modules package.json
     cd -

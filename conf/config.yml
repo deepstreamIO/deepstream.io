@@ -187,6 +187,26 @@ logger:
   # # value of logLevel (line 4) will always overwrite this value
   #   logLevel: INFO
 
+  # name: winston
+  # options:
+  #   transports:
+  #     # specify a list of transports (console, file, time)
+  #     -
+  #       type: console
+  #       options:
+  #         level: verbose
+  #         colorize: true
+  #     -
+  #       type: file
+  #       level: debug
+  #       options:
+  #         filename: 'logs.json'
+  #     -
+  #       type: time
+  #       level: warn
+  #       options:
+  #         filename: time-rotated-logfile
+  #         datePattern: .yyyy-MM-dd-HH-mm
 
 # cache:
 #   name: redis

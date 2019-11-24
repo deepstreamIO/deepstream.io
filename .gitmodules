@@ -28,3 +28,6 @@
 [submodule "connectors/clusterNode/redis"]
 	path = connectors/clusterNode/redis
 	url = git@github.com:deepstreamIO/deepstream.io-clusternode-redis.git
+[submodule "connectors/logger/winston"]
+	path = connectors/logger/winston
+	url = git@github.com:deepstreamIO/deepstream.io-logger-winston.git

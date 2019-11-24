@@ -2,6 +2,11 @@
 
 ## [5.0.5] - 2019.11.24
 
+
+### Feat
+
+- Adding winston to docker and package image
+
 ### Fix
 
 - Fixed critical issue where invalid websocket frames kill server
