@@ -2,7 +2,7 @@ import { SCHEMA } from './config-schema'
 import * as pathParser from './path-parser'
 import * as ruleParser from './rule-parser'
 import { Dictionary } from 'ts-essentials'
-import { DeepstreamConfig } from '../../../../ds-types/src/index'
+import { DeepstreamConfig } from '@deepstream/types'
 
 const validationSteps: Dictionary<(config: DeepstreamConfig) => boolean | string> = {}
 

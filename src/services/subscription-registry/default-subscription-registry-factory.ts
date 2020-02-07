@@ -1,5 +1,5 @@
 import { DefaultSubscriptionRegistry } from './default-subscription-registry'
-import { DeepstreamConfig, DeepstreamServices, DeepstreamPlugin, SubscriptionRegistryFactory, SubscriptionRegistry } from '../../../ds-types/src/index'
+import { DeepstreamConfig, DeepstreamServices, DeepstreamPlugin, SubscriptionRegistryFactory, SubscriptionRegistry } from '@deepstream/types'
 import { TOPIC } from '../../constants'
 
 export class DefaultSubscriptionRegistryFactory extends DeepstreamPlugin implements SubscriptionRegistryFactory {
@@ -7,7 +7,7 @@ export class DefaultSubscriptionRegistryFactory extends DeepstreamPlugin impleme
 
     private subscriptionRegistries = new Map<TOPIC, SubscriptionRegistry>()
 
-    constructor (private pluginOptions: any, private services: DeepstreamServices, private config: DeepstreamConfig) {
+    constructor (private pluginOptions: any, private services: Readonly<DeepstreamServices>, private config: Readonly<DeepstreamConfig>) {
         super()
     }
 

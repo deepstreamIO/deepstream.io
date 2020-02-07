@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-LTS_VERSION="10"
+LTS_VERSION="12"
 NODE_VERSION=$( node --version )
 NODE_VERSION_WITHOUT_V=$( echo ${NODE_VERSION} | cut -c2-10 )
 COMMIT=$( node scripts/details.js COMMIT )
@@ -108,6 +108,10 @@ function compile {
         @deepstream/storage-elasticsearch \
         @deepstream/storage-postgres
     
+    echo "Adding logger plugins"
+    npm install --production --global-style \
+        @deepstream/logger-winston
+
     mv node_modules/* .
     rm -rf node_modules package.json
     cd -
@@ -138,7 +142,7 @@ function compile {
     echo -e "\tAdding Changelog"
     cp CHANGELOG.md ${DEEPSTREAM_PACKAGE}/doc/CHANGELOG.md
     echo -e "\tAdding Licenses"
-    curl -L https://raw.githubusercontent.com/nodejs/node/v10.x/LICENSE -o ${DEEPSTREAM_PACKAGE}/doc/NODE.LICENSE
+    curl -L https://raw.githubusercontent.com/nodejs/node/v12.x/LICENSE -o ${DEEPSTREAM_PACKAGE}/doc/NODE.LICENSE
     mv build/DEPENDENCIES.LICENSE ${DEEPSTREAM_PACKAGE}/doc/LICENSE
 
     echo "Moving deepstream into package structure at $DEEPSTREAM_PACKAGE"

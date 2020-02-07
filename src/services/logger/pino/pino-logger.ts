@@ -1,5 +1,5 @@
 import * as pino from 'pino'
-import { LOG_LEVEL, DeepstreamPlugin, DeepstreamLogger, DeepstreamServices, NamespacedLogger, EVENT } from '../../../../ds-types/src'
+import { LOG_LEVEL, DeepstreamPlugin, DeepstreamLogger, DeepstreamServices, NamespacedLogger, EVENT } from '@deepstream/types'
 
 const DSToPino: { [index: number]: string } = {
     [LOG_LEVEL.DEBUG]: 'debug',
@@ -37,35 +37,55 @@ export class PinoLogger extends DeepstreamPlugin implements DeepstreamLogger {
      * Log as info
      */
     public info (event: string, message?: string, metaData?: any): void {
-        this.logger.info({ message, event })
+        if (metaData) {
+            this.logger.info({ ...metaData, message, event })
+        } else {
+            this.logger.info({ message, event })
+        }
     }
 
     /**
      * Log as debug
      */
     public debug (event: string, message?: string, metaData?: any): void {
-        this.logger.debug({ message, event })
+        if (metaData) {
+            this.logger.debug({ ...metaData, message, event, })
+        } else {
+            this.logger.debug({ message, event })
+        }
     }
 
     /**
      * Log as warn
      */
     public warn (event: string, message?: string, metaData?: any): void {
-        this.logger.warn({ message, event })
+        if (metaData) {
+            this.logger.warn({ ...metaData, message, event, })
+        } else {
+            this.logger.warn({ message, event })
+        }
     }
 
     /**
      * Log as error
      */
     public error (event: string, message?: string, metaData?: any): void {
-        this.logger.error({ message, event })
+        if (metaData) {
+            this.logger.error({ ...metaData, message, event, })
+        } else {
+            this.logger.error({ message, event })
+        }
     }
 
     /**
      * Log as error
      */
     public fatal (event: string, message?: string, metaData?: any): void {
-        this.logger.fatal({ message, event })
+        if (metaData) {
+            this.logger.fatal({ ...metaData, message, event, })
+        } else {
+            this.logger.fatal({ message, event })
+        }
         this.services.notifyFatalException()
     }
 

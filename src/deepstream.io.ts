@@ -19,7 +19,7 @@ import * as configInitializer from './config/config-initialiser'
 import * as jsYamlLoader from './config/js-yaml-loader'
 
 import { DependencyInitialiser } from './utils/dependency-initialiser'
-import { DeepstreamConfig, DeepstreamServices, DeepstreamPlugin, PartialDeepstreamConfig, EVENT, SocketWrapper, ConnectionListener } from '../ds-types/src/index'
+import { DeepstreamConfig, DeepstreamServices, DeepstreamPlugin, PartialDeepstreamConfig, EVENT, SocketWrapper, ConnectionListener } from '@deepstream/types'
 import RecordHandler from './handlers/record/record-handler'
 import { getValue, setValue } from './utils/json-path'
 import { CombineAuthentication } from './services/authentication/combine/combine-authentication'
@@ -167,6 +167,10 @@ export class Deepstream extends EventEmitter {
 
   public getServices (): Readonly<DeepstreamServices> {
     return this.services
+  }
+
+  public getConfig (): Readonly<DeepstreamConfig> {
+    return this.config
   }
 
 /* ======================================================================= *

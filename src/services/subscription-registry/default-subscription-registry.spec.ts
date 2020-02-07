@@ -4,7 +4,7 @@ import {expect} from 'chai'
 import * as C from '../../constants'
 import * as testHelper from '../../test/helper/test-helper'
 import { getTestMocks } from '../../test/helper/test-mocks'
-import { SocketWrapper } from '../../../ds-types/src/index'
+import { SocketWrapper } from '@deepstream/types'
 import { DefaultSubscriptionRegistry } from './default-subscription-registry';
 
 const options = testHelper.getDeepstreamOptions()

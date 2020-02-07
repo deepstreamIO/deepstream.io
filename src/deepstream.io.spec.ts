@@ -14,7 +14,7 @@ describe('deepstream.io', () => {
       }).not.to.throw()
     })
 
-    it('sets an unsupported option', async () => {
+    it.skip('sets an unsupported option', async () => {
       const server = new Deepstream()
       await PromiseDelay(50)
       expect(() => {

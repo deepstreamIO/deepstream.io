@@ -1,4 +1,4 @@
-import { DeepstreamPlugin, DeepstreamServices, DeepstreamConfig } from '../../../ds-types/src/index'
+import { DeepstreamPlugin, DeepstreamServices, DeepstreamConfig } from '@deepstream/types'
 import { EventEmitter } from 'events'
 
 export default class PluginMock extends DeepstreamPlugin {

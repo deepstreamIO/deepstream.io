@@ -2,7 +2,7 @@
 
 deepstream is an open source server inspired by concepts behind financial trading technology. It allows clients and backend services to sync data, send messages and make rpcs at very high speed and scale.
 
-[![Build Status](https://travis-ci.org/deepstreamIO/deepstream.io.svg?branch=master)](https://travis-ci.org/deepstreamIO/deepstream.io) [![npm version](https://badge.fury.io/js/deepstream.io.svg)](http://badge.fury.io/js/deepstream.io)[![dependencies Status](https://david-dm.org/deepstreamIO/deepstream.io/status.svg)](https://david-dm.org/deepstreamIO/deepstream.io) [![devDependencies Status](https://david-dm.org/deepstreamIO/deepstream.io/dev-status.svg)](https://david-dm.org/deepstreamIO/deepstream.io?type=dev)
+[![Build Status](https://travis-ci.org/deepstreamIO/deepstream.io.svg?branch=master)](https://travis-ci.org/deepstreamIO/deepstream.io) [![npm version](https://badge.fury.io/js/deepstream.io.svg)](http://badge.fury.io/js/deepstream.io)[![dependencies Status](https://david-dm.org/deepstreamIO/deepstream.io/status.svg)](https://david-dm.org/deepstreamIO/deepstream.io) [![devDependencies Status](https://david-dm.org/deepstreamIO/deepstream.io/dev-status.svg)](https://david-dm.org/deepstreamIO/deepstream.io?type=dev)[![Docker Stars](https://img.shields.io/docker/pulls/deepstreamio/deepstream.io.svg)](https://hub.docker.com/r/deepstreamio/deepstream.io/)
 
 deepstream has three core concepts for enabling realtime application development
 

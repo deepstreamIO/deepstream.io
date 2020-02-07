@@ -1,7 +1,7 @@
 import RecordDeletion from './record-deletion'
 import { recordRequestBinding } from './record-request'
 import { RecordTransition } from './record-transition'
-import { SubscriptionRegistry, Handler, DeepstreamConfig, DeepstreamServices, SocketWrapper, EVENT } from '../../../ds-types/src/index'
+import { SubscriptionRegistry, Handler, DeepstreamConfig, DeepstreamServices, SocketWrapper, EVENT } from '@deepstream/types'
 import { ListenerRegistry } from '../../listen/listener-registry'
 import { isExcluded } from '../../utils/utils'
 import { STATE_REGISTRY_TOPIC, RecordMessage, TOPIC, RecordWriteMessage, BulkSubscriptionMessage, ListenMessage, PARSER_ACTION, RECORD_ACTION as RA, JSONObject, Message, RECORD_ACTION, ALL_ACTIONS } from '../../constants'

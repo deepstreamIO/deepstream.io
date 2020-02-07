@@ -1,4 +1,4 @@
-import { PartialDeepstreamConfig, LOG_LEVEL } from '../../ds-types/src/index'
+import { PartialDeepstreamConfig, LOG_LEVEL } from '@deepstream/types'
 import * as permissions from '../config/permissions-open.json'
 
 export const getServerConfig = (port: number): PartialDeepstreamConfig => ({
@@ -65,9 +65,10 @@ export const getServerConfig = (port: number): PartialDeepstreamConfig => ({
     monitoring: {
       type: 'http',
       options: {
-        reportInterval: 200,
-        permissionLogLimit: 3,
-        technicalErrorLogLimit: 3
+        url: '/monitoring',
+        allowOpenPermissions: false,
+        headerKey: 'deepstream-password',
+        headerValue: 'deepstream-secret'
       } as any
     },
 

@@ -1,5 +1,5 @@
 import { TOPIC, Message } from '../../constants'
-import { DeepstreamClusterNode, DeepstreamPlugin } from '../../../ds-types/src/index'
+import { DeepstreamClusterNode, DeepstreamPlugin } from '@deepstream/types'
 
 export class SingleClusterNode extends DeepstreamPlugin implements DeepstreamClusterNode {
   public description = 'Single Cluster Node'

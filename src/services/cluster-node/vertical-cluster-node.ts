@@ -1,7 +1,7 @@
 import { Message, TOPIC } from '../../constants'
 import * as cluster from 'cluster'
 import { EventEmitter } from 'events'
-import { DeepstreamClusterNode, DeepstreamPlugin, DeepstreamServices, DeepstreamConfig } from '../../../ds-types/src/index'
+import { DeepstreamClusterNode, DeepstreamPlugin, DeepstreamServices, DeepstreamConfig } from '@deepstream/types'
 
 if (cluster.isWorker) {
     process.on('message', (serializedMessage) => {

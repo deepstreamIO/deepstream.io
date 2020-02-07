@@ -17,7 +17,7 @@ import {
   deepFreeze,
 } from '../utils/utils'
 import { jifSchema } from './jif-schema'
-import { JifMessage, DeepstreamServices, EVENT } from '../../ds-types/src/index'
+import { JifMessage, DeepstreamServices, EVENT } from '@deepstream/types'
 
 const ajv = new Ajv()
 

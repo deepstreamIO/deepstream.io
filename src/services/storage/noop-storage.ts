@@ -1,4 +1,4 @@
-import { DeepstreamPlugin, StorageWriteCallback, StorageReadCallback, DeepstreamStorage } from '../../../ds-types/src/index'
+import { DeepstreamPlugin, StorageWriteCallback, StorageReadCallback, DeepstreamStorage } from '@deepstream/types'
 
 export class NoopStorage extends DeepstreamPlugin implements DeepstreamStorage {
   public description = 'Noop Storage'

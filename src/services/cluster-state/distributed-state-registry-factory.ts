@@ -1,4 +1,4 @@
-import { DeepstreamPlugin, DeepstreamServices, DeepstreamConfig, StateRegistryFactory, StateRegistry } from '../../../ds-types/src/index'
+import { DeepstreamPlugin, DeepstreamServices, DeepstreamConfig, StateRegistryFactory, StateRegistry } from '@deepstream/types'
 import { TOPIC } from '../../constants'
 import { DistributedStateRegistry, DistributedStateRegistryOptions } from './distributed-state-registry'
 
@@ -6,7 +6,7 @@ export class DistributedStateRegistryFactory extends DeepstreamPlugin implements
     public description: string = 'Distributed State Registry'
     private stateRegistries = new Map<TOPIC, StateRegistry>()
 
-    constructor (private pluginConfig: DistributedStateRegistryOptions, private services: DeepstreamServices, private config: DeepstreamConfig) {
+    constructor (private pluginConfig: DistributedStateRegistryOptions, private services: Readonly<DeepstreamServices>, private config: Readonly<DeepstreamConfig>) {
         super()
     }
 

@@ -1,4 +1,4 @@
-import { DeepstreamPlugin, DeepstreamHTTPService, EVENT, PostRequestHandler, GetRequestHandler, DeepstreamHTTPMeta, DeepstreamHTTPResponse, SocketHandshakeData, DeepstreamServices, DeepstreamConfig, SocketWrapper, WebSocketConnectionEndpoint, SocketWrapperFactory } from '../../../../ds-types/src/index'
+import { DeepstreamPlugin, DeepstreamHTTPService, EVENT, PostRequestHandler, GetRequestHandler, DeepstreamHTTPMeta, DeepstreamHTTPResponse, SocketHandshakeData, DeepstreamServices, DeepstreamConfig, SocketWrapper, WebSocketConnectionEndpoint, SocketWrapperFactory } from '@deepstream/types'
 // @ts-ignore
 import * as httpShutdown from 'http-shutdown'
 import * as http from 'http'
@@ -126,6 +126,10 @@ export class NodeHTTP extends DeepstreamPlugin implements DeepstreamHTTPService 
   public registerWebsocketEndpoint (path: string, createSocketWrapper: SocketWrapperFactory, webSocketConnectionEndpoint: WebSocketConnectionEndpoint) {
     const server = new WebSocket.Server({ noServer: true })
     server.on('connection', (websocket: WebSocket, handshakeData: SocketHandshakeData) => {
+      websocket.on('error', (error) => {
+        this.services.logger.error(EVENT.ERROR, `Error on websocket: ${error.message}`)
+      })
+
       const socketWrapper = createSocketWrapper(websocket, handshakeData, this.services, webSocketConnectionEndpoint.wsOptions, webSocketConnectionEndpoint)
       this.connections.set(websocket, socketWrapper)
 
@@ -143,7 +147,6 @@ export class NodeHTTP extends DeepstreamPlugin implements DeepstreamHTTPService 
 
       webSocketConnectionEndpoint.onConnection.call(webSocketConnectionEndpoint, socketWrapper)
     })
-
     this.upgradePaths.set(path, server)
     this.sortedUpgradePaths = [...this.upgradePaths.keys()].sort().reverse()
   }
@@ -170,7 +173,7 @@ export class NodeHTTP extends DeepstreamPlugin implements DeepstreamHTTPService 
         wss.handleUpgrade(request, socket, head, (ws) => {
           wss.emit('connection', ws, {
             remoteAddress: request.headers['x-forwarded-for'] || request.connection.remoteAddress,
-            headers: this.getHeaders(this.pluginOptions.headers, request),
+            headers: request.headers,
             referer: request.headers.referer
           })
         })
@@ -375,13 +378,4 @@ export class NodeHTTP extends DeepstreamPlugin implements DeepstreamHTTPService 
       response.end()
     }
   }
-
-  public getHeaders (desiredHeaders: string[] = [], req: http.IncomingMessage) {
-    const headers: Dictionary<string> = {}
-    for (const wantedHeader of desiredHeaders) {
-      headers[wantedHeader] = req.headers[wantedHeader] as string
-    }
-    return headers
-  }
-
 }

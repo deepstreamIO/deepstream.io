@@ -1,4 +1,4 @@
-import { DeepstreamLogger, DeepstreamPlugin, LOG_LEVEL, NamespacedLogger, EVENT } from '../../ds-types/src/index'
+import { DeepstreamLogger, DeepstreamPlugin, LOG_LEVEL, NamespacedLogger, EVENT } from '@deepstream/types'
 
 interface Log {
   level: number,

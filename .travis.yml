@@ -26,16 +26,16 @@ compiler:
   - clang
 
 node_js:
-  - "10"
+  - "12"
 
 env:
   - DEFAULT_DELAY: 50
 
 matrix:
   include:
-    - node_js: "10"
+    - node_js: "12"
       os: linux
-    - node_js: "10"
+    - node_js: "12"
       os: osx
 
 script:
@@ -87,13 +87,13 @@ deploy:
     - "build/*/*.zip"
   on:
     tags: true
-# - provider: npm
-#   email: "info@deepstream.io"
-#   api_key: ${NPM_TOKEN}
-#   skip_cleanup: true
-#   on:
-#     tags: true
-#     condition: $TRAVIS_OS_NAME = linux
+- provider: npm
+  email: "info@deepstream.io"
+  api_key: ${NPM_TOKEN}
+  skip_cleanup: true
+  on:
+    tags: true
+    condition: $TRAVIS_OS_NAME = linux
 - provider: script
   script: bash scripts/docker.sh
   skip_cleanup: true

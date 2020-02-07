@@ -62,15 +62,12 @@ httpServer:
     # a list of allowed origins
     origins:
       - 'https://example.com'
-    # Headers to copy over from websocket
-    headers:
-      - user-agent
     # Options required to create an ssl app
     # ssl:
     #   key: fileLoad(ssl/key.pem)
     #   cert: fileLoad(ssl/cert.pem)
     #   ca: ...
-    
+
   # type: uws
   # options:
   #   # url path for http health-checks, GET requests to this path will return 200 if deepstream is alive
@@ -177,24 +174,51 @@ connectionEndpoints:
 
 # Logger Configuration
 logger:
-  # use either the default logger
+  # use either the default logger, this does not currently support meta objects
   type: default
   options:
     colors: true
     # value of logLevel (line 4) will always overwrite this value
     logLevel: INFO
 
+  # log using json, this supports meta objects
+  # name: pino
+  # options:
+  # # value of logLevel (line 4) will always overwrite this value
+  #   logLevel: INFO
+
+  # name: winston
+  # options:
+  #   transports:
+  #     # specify a list of transports (console, file, time)
+  #     -
+  #       type: console
+  #       options:
+  #         level: verbose
+  #         colorize: true
+  #     -
+  #       type: file
+  #       level: debug
+  #       options:
+  #         filename: 'logs.json'
+  #     -
+  #       type: time
+  #       level: warn
+  #       options:
+  #         filename: time-rotated-logfile
+  #         datePattern: .yyyy-MM-dd-HH-mm
+
 # cache:
 #   name: redis
 #   options:
-#     host: localhost
-#     port: 6379
+#     host: ${REDIS_HOST}
+#     port: ${REDIS_PORT}
 
 # storage:
-#   name: rethinkdb
+#   name: mongodb
 #   options:
-#     host: localhost
-#     port: 28015
+#     connectionString: ${MONGO_CONNECTION_STRING}
+#     db: default
 
 # Authentication
 auth:
@@ -239,7 +263,7 @@ auth:
   #     # promote the following items from the login auth data into headers
   #     promoteToHeader:
   #       - token
-  #     # the codes which the auth handler should retry. This is useful for when the API you depend on is 
+  #     # the codes which the auth handler should retry. This is useful for when the API you depend on is
   #     # flaky or going through a not so blue/green deployment
   #     retryStatusCodes: [ 404, 504 ]
   #     # the maximum amount of retries before returning a false login
@@ -258,11 +282,23 @@ permission:
     # PermissionResults are cached to increase performance. Lower number means more loading
     cacheEvacuationInterval: 60000
 
-# monitoring:
-#   type: default
-#   options:
-#     host: localhost
-#     port: 9090
+monitoring:
+  type: none
+
+  # # Allows monitoring stats to be requested via HTTP, useful for polling agents
+  # # such as LogStach
+  # type: http
+  # options:
+  #   url: /monitoring
+  #   allowOpenPermissions: false
+  #   headerKey: deepstream-password2
+  #   headerValue: deepstream-secret
+
+  # # Logs monitoring stats, useful for kibana where you can visualize meta data
+  # type: log
+  # options:
+  #   logInterval: 30000
+  #   monitoringKey: DEEPSTREAM_MONITORING
 
 # clusterNode:
 #   type: default

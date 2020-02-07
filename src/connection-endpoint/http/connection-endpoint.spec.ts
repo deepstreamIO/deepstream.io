@@ -2,7 +2,7 @@ import { expect } from 'chai'
 import * as needle from 'needle'
 
 import LoggerMock from '../../test/mock/logger-mock'
-import { DeepstreamServices, DeepstreamConfig } from '../../../ds-types/src/index';
+import { DeepstreamServices, DeepstreamConfig } from '@deepstream/types';
 import { OpenAuthentication } from '../../services/authentication/open/open-authentication';
 import { OpenPermission } from '../../services/permission/open/open-permission';
 import { NodeHTTP } from '../../services/http/node/node-http'

@@ -4,7 +4,7 @@ import { EOL } from 'os'
 
 import * as utils from '../utils/utils'
 import * as fileUtils from './file-utils'
-import { DeepstreamConfig, DeepstreamServices, DeepstreamConnectionEndpoint, PluginConfig, DeepstreamLogger, DeepstreamAuthentication, DeepstreamPermission, LOG_LEVEL, EVENT, DeepstreamMonitoring, DeepstreamAuthenticationCombiner, DeepstreamHTTPService } from '../../ds-types/src/index'
+import { DeepstreamConfig, DeepstreamServices, DeepstreamConnectionEndpoint, PluginConfig, DeepstreamLogger, DeepstreamAuthentication, DeepstreamPermission, LOG_LEVEL, EVENT, DeepstreamMonitoring, DeepstreamAuthenticationCombiner, DeepstreamHTTPService } from '@deepstream/types'
 import { DistributedClusterRegistry } from '../services/cluster-registry/distributed-cluster-registry'
 import { SingleClusterNode } from '../services/cluster-node/single-cluster-node'
 import { DefaultSubscriptionRegistryFactory } from '../services/subscription-registry/default-subscription-registry-factory'
@@ -32,6 +32,7 @@ import { get as getDefaultOptions } from '../default-options'
 import Deepstream from '../deepstream.io'
 import { NodeHTTP } from '../services/http/node/node-http'
 import HTTPMonitoring from '../services/monitoring/http/monitoring-http'
+import LogMonitoring from '../services/monitoring/log/monitoring-log'
 import { InitialLogs } from './js-yaml-loader'
 import * as configValidator from './config-validator'
 
@@ -173,8 +174,12 @@ function handleLogger (config: DeepstreamConfig, services: DeepstreamServices): 
     logger.error = logger.error || logger.log.bind(logger, LOG_LEVEL.ERROR)
   }
 
-  if (LOG_LEVEL[config.logLevel]) {
-    logger.setLogLevel(config.logLevel)
+  if (LOG_LEVEL[config.logLevel] !== undefined) {
+    if (typeof config.logLevel === 'string') {
+      logger.setLogLevel(LOG_LEVEL[config.logLevel])
+    } else {
+      logger.setLogLevel(config.logLevel)
+    }
   } else if (config.logLevel) {
     throw new Error (`Unknown logLevel ${LOG_LEVEL[config.logLevel]}`)
   }
@@ -397,7 +402,8 @@ function handleMonitoring (config: DeepstreamConfig, services: DeepstreamService
   const monitoringPlugins = {
     default: NoopMonitoring,
     none: NoopMonitoring,
-    http: HTTPMonitoring
+    http: HTTPMonitoring,
+    log: LogMonitoring
   }
 
   if (config.monitoring.name || config.monitoring.path) {

@@ -1,7 +1,7 @@
 import { spy, assert } from 'sinon'
 import { expect } from 'chai'
 import { FileBasedAuthentication } from './file-based-authentication'
-import { DeepstreamServices, EVENT } from '../../../../ds-types/src/index'
+import { DeepstreamServices, EVENT } from '@deepstream/types'
 import { PromiseDelay } from '../../../utils/utils'
 
 import * as users from '../../../test/config/users.json'
@@ -186,29 +186,6 @@ describe('file based authentication', () => {
         // tslint:disable-next-line:no-unused-expression
         new FileBasedAuthentication(settings)
       }).to.throw()
-    })
-  })
-
-  describe('creates hashes', () => {
-    let authenticationHandler
-    const settings = {
-      users,
-      hash: 'md5',
-      iterations: 100,
-      keyLength: 32
-    }
-
-    beforeEach(async () => {
-      authenticationHandler = new FileBasedAuthentication(settings, createServices())
-      await authenticationHandler.whenReady()
-    })
-
-    it('creates a hash', (done) => {
-      authenticationHandler.createHash('userAPass', (err, result) => {
-        expect(err).to.eq(null)
-        expect(typeof result).to.eq('string')
-        done()
-      })
     })
   })
 

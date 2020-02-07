@@ -8,7 +8,8 @@ RUN npm install --production \
     @deepstream/storage-mongodb \
     @deepstream/storage-rethinkdb \
     @deepstream/storage-elasticsearch \
-    @deepstream/storage-postgres
+    @deepstream/storage-postgres \
+    @deepstream/logger-winston
 
 COPY . ./
 

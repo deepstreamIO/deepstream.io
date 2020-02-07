@@ -1,4 +1,4 @@
-import { DeepstreamPlugin, DeepstreamHTTPService, PostRequestHandler, GetRequestHandler, DeepstreamServices, DeepstreamConfig, SocketWrapper, WebSocketConnectionEndpoint, SocketWrapperFactory, EVENT } from '../../../../ds-types/src/index'
+import { DeepstreamPlugin, DeepstreamHTTPService, PostRequestHandler, GetRequestHandler, DeepstreamServices, DeepstreamConfig, SocketWrapper, WebSocketConnectionEndpoint, SocketWrapperFactory, EVENT } from '@deepstream/types'
 // import * as HTTPStatus from 'http-status'
 import { Dictionary } from 'ts-essentials'
 import { STATES } from '../../../constants'

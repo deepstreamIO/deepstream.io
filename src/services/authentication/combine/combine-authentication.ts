@@ -1,4 +1,4 @@
-import { DeepstreamPlugin, DeepstreamAuthenticationCombiner, DeepstreamAuthentication, UserAuthenticationCallback } from '../../../../ds-types/src/index'
+import { DeepstreamPlugin, DeepstreamAuthenticationCombiner, DeepstreamAuthentication, UserAuthenticationCallback } from '@deepstream/types'
 import { JSONObject } from '../../../constants'
 
 /**
@@ -35,5 +35,13 @@ export class CombineAuthentication extends DeepstreamPlugin implements Deepstrea
       }
     }
     callback(false)
+  }
+
+  public onClientDisconnect (user: string): void {
+    for (const auth of this.auths) {
+      if (auth.onClientDisconnect) {
+        auth.onClientDisconnect(user)
+      }
+    }
   }
 }

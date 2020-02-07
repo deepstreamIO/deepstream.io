@@ -1,5 +1,5 @@
 import { post } from 'needle'
-import { EVENT, DeepstreamPlugin, DeepstreamServices, DeepstreamConfig, DeepstreamAuthentication, DeepstreamAuthenticationResult } from '../../../../ds-types/src/index'
+import { EVENT, DeepstreamPlugin, DeepstreamServices, DeepstreamConfig, DeepstreamAuthentication, DeepstreamAuthenticationResult } from '@deepstream/types'
 import { JSONObject } from '../../../constants'
 import { validateMap } from '../../../utils/utils'
 

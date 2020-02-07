@@ -1,4 +1,4 @@
-import { DeepstreamStorage, DeepstreamCache, StorageWriteCallback, StorageReadCallback, DeepstreamPlugin } from '../../../ds-types/src/index'
+import { DeepstreamStorage, DeepstreamCache, StorageWriteCallback, StorageReadCallback, DeepstreamPlugin } from '@deepstream/types'
 import { JSONObject } from '../../constants'
 
 export default class StorageMock extends DeepstreamPlugin implements DeepstreamStorage, DeepstreamCache  {

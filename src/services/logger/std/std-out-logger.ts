@@ -1,7 +1,6 @@
-import chalk from 'chalk'
-import { DeepstreamPlugin, DeepstreamLogger, DeepstreamServices, DeepstreamConfig, LOG_LEVEL, NamespacedLogger, EVENT, MetaData } from '../../../../ds-types/src/index'
-
-const EOL = require('os').EOL
+import * as chalk from 'chalk'
+import { DeepstreamPlugin, DeepstreamLogger, DeepstreamServices, DeepstreamConfig, LOG_LEVEL, NamespacedLogger, EVENT, MetaData } from '@deepstream/types'
+import { EOL } from 'os'
 
 export class StdOutLogger extends DeepstreamPlugin implements DeepstreamLogger {
   public description = 'std out/err'

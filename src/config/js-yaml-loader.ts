@@ -4,7 +4,7 @@ import * as path from 'path'
 
 import { get as getDefaultOptions } from '../default-options'
 import { merge } from '../utils/utils'
-import { DeepstreamConfig, LOG_LEVEL, EVENT } from '../../ds-types/src/index'
+import { DeepstreamConfig, LOG_LEVEL, EVENT } from '@deepstream/types'
 import Deepstream from '../deepstream.io'
 import * as configInitializer from './config-initialiser'
 import * as fileUtils from './file-utils'
@@ -52,7 +52,10 @@ export const readAndParseFile = function (filePath: string, callback: Function):
  * Loads a config file without having to initialize it. Useful for one
  * off operations such as generating a hash via cli
  */
-export const loadConfigWithoutInitialization = async function (filePath: string | null = null, initialLogs: InitialLogs = [], args?: object): Promise<any> {
+export const loadConfigWithoutInitialization = async function (filePath: string | null = null, initialLogs: InitialLogs = [], args?: object): Promise<{
+  config: DeepstreamConfig,
+  configPath: string
+}> {
   // @ts-ignore
   const argv = args || global.deepstreamCLI || {}
   const configPath = setGlobalConfigDirectory(argv, filePath)
@@ -228,6 +231,7 @@ async function loadFiles (fileContent: string, initialLogs: InitialLogs): Promis
             err ? reject(err) : resolve(data)
           })
         )
+        content = replaceEnvironmentVariables(content)
         try {
           if (['.yml', '.yaml', '.js', '.json'].includes(path.extname(filename))) {
             content = parseFile(filename, content)

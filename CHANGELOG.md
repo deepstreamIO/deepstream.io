@@ -1,7 +1,72 @@
-## [5.0.0-rc.1] - 2019.10.07
 
-These change logs will be updated with an immense amount of changes. Need to get an RC out first to make
-sure everything works as expected.
+
+## [5.0.5] - 2019.11.24
+
+
+### Feat
+
+- Adding winston to docker and package image
+
+### Fix
+
+- Fixed critical issue where invalid websocket frames kill server
+
+## [5.0.4] - 2019.11.05
+
+### Fix
+
+- Provide all HTTP headers to auth endpoint when using ws
+
+## [5.0.3] - 2019.11.05
+
+### Feat
+
+- Adding a log monitoring plugin, useful for kibana log forwarding
+- Adding header authentication for http monitoring
+
+## [5.0.2] - 2019.11.04
+
+### Fix
+
+- Production only dependency did not include ds-types
+- Close down MQTT server on stop
+
+## [5.0.1] - 2019.11.02
+
+### Features
+
+- Replaces ENV variables in config loaded using fileLoader [#1022](https://github.com/deepstreamIO/deepstream.io/issues/1022)
+
+### Fixes
+
+- Fixes odd types scripting issue breaking plugin interfaces when using `deepstream.getServices()`
+- Fixes hash generation via CLI [#1025](https://github.com/deepstreamIO/deepstream.io/issues/1025)
+
+## [5.0.0] - 2019.10.27
+
+### Features:
+
+- New License
+- Singular HTTP Service
+- SSL Support reintroduced
+- Better Config file validation
+- JSON Logger
+- NGINX Helper
+- Combined authentication handler
+- Embedded dependencies
+- Builtin HTTP Monitoring
+- Storage authentication endpoint
+- Guess whats back, official clustering support!
+
+### Backwards compatibility
+
+- Custom authentication plugins now have to use the async/await API
+- Custom permission handlers need to slightly tweak the function arguments
+- Deployment configuration has to be (simplified) to respect the single HTTP/Websocket port
+
+### Upgrade guide
+
+You can see the upgrade guide for backwards compatibility [here](https://deepstream.io/tutorials/upgrade-guides/v5/server/)
 
 ## [4.2.5] - 2019.10.01
 

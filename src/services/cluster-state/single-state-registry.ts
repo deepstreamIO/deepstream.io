@@ -1,4 +1,4 @@
-import { StateRegistry, DeepstreamPlugin, StateRegistryCallback } from '../../../ds-types/src/index'
+import { StateRegistry, DeepstreamPlugin, StateRegistryCallback } from '@deepstream/types'
 import { EventEmitter } from 'events'
 
 /**

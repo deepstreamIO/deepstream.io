@@ -1,6 +1,6 @@
 import BaseWebsocketConnectionEndpoint, { WebSocketServerConfig } from '../../base/connection-endpoint'
 import { createWSSocketWrapper } from './socket-wrapper-factory'
-import { DeepstreamServices, DeepstreamConfig, WebSocketConnectionEndpoint } from '../../../../ds-types/src/index'
+import { DeepstreamServices, DeepstreamConfig, WebSocketConnectionEndpoint } from '@deepstream/types'
 
 export class WSBinaryConnectionEndpoint extends BaseWebsocketConnectionEndpoint implements WebSocketConnectionEndpoint {
   public description = 'Binary WebSocket Connection Endpoint'

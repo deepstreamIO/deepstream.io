@@ -1,6 +1,6 @@
 import { TOPIC, CONNECTION_ACTION, ParseResult, Message } from '../../constants'
 import { WebSocketServerConfig } from './connection-endpoint'
-import { SocketConnectionEndpoint, StatefulSocketWrapper, DeepstreamServices, UnauthenticatedSocketWrapper, SocketWrapper, EVENT } from '../../../ds-types/src/index'
+import { SocketConnectionEndpoint, StatefulSocketWrapper, DeepstreamServices, UnauthenticatedSocketWrapper, SocketWrapper, EVENT } from '@deepstream/types'
 
 export abstract class WSSocketWrapper<SerializedType extends { length: number }> implements UnauthenticatedSocketWrapper {
   public isRemote: false = false

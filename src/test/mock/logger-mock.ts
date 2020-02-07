@@ -1,5 +1,5 @@
 import {spy, SinonSpy} from 'sinon'
-import { DeepstreamLogger, DeepstreamPlugin, LOG_LEVEL, NamespacedLogger, EVENT } from '../../../ds-types/src/index'
+import { DeepstreamLogger, DeepstreamPlugin, LOG_LEVEL, NamespacedLogger, EVENT } from '@deepstream/types'
 
 export default class LoggerMock extends DeepstreamPlugin implements DeepstreamLogger {
   public description: string = 'mock logger'

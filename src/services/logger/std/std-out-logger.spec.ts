@@ -3,7 +3,7 @@ import { expect } from 'chai'
 import {spy} from 'sinon'
 
 import { StdOutLogger } from './std-out-logger'
-import { LOG_LEVEL, EVENT } from '../../../../ds-types/src/index';
+import { LOG_LEVEL, EVENT } from '@deepstream/types';
 
 describe('logs to stdout and stderr', () => {
   const logger = new StdOutLogger({ color: false })

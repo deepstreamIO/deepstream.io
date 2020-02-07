@@ -1,6 +1,6 @@
 import { parseData } from '@deepstream/protobuf/dist/src/message-parser'
 import { EventEmitter } from 'events'
-import { DeepstreamServices, UnauthenticatedSocketWrapper, EVENT, DeepstreamAuthenticationResult } from '../../../ds-types/src/index'
+import { DeepstreamServices, UnauthenticatedSocketWrapper, EVENT, DeepstreamAuthenticationResult } from '@deepstream/types'
 import { Message, ParseResult } from '../../constants'
 
 export default class HTTPSocketWrapper extends EventEmitter implements UnauthenticatedSocketWrapper {
