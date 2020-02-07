@@ -15,7 +15,7 @@ docker push deepstreamio/deepstream.io:latest
 
 npm uninstall --save uWebSockets.js
 echo 'Replacing node with node-alpine'
-sed -i 's@node:10@node:10-alpine@' Dockerfile
+sed -i 's@node:12@node:12-alpine@' Dockerfile
 echo 'Building node alpine'
 docker build . -t deepstreamio/deepstream.io:${PACKAGE_VERSION}-alpine -t deepstreamio/deepstream.io:latest-alpine
 echo 'Pushing node alpine'
