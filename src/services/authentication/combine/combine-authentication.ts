@@ -36,4 +36,12 @@ export class CombineAuthentication extends DeepstreamPlugin implements Deepstrea
     }
     callback(false)
   }
+
+  public onClientDisconnect (user: string): void {
+    for (const auth of this.auths) {
+      if (auth.onClientDisconnect) {
+        auth.onClientDisconnect(user)
+      }
+    }
+  }
 }
