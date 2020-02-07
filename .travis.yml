@@ -33,9 +33,9 @@ env:
 
 matrix:
   include:
-    - node_js: "10"
+    - node_js: "12"
       os: linux
-    - node_js: "10"
+    - node_js: "12"
       os: osx
 
 script:
