@@ -1,3 +1,9 @@
+## [5.0.7] - 2020.02.08
+  
+### Fixes
+
+- Fixes in storage auth handler by @abird
+
 ## [5.0.6] - 2020.02.08
 
 ### Improvement
