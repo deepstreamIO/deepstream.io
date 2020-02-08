@@ -27,13 +27,12 @@ type UserData = DeepstreamAuthenticationResult & {
 
 export class StorageBasedAuthentication extends DeepstreamPlugin implements DeepstreamAuthentication {
   public description: string = `Storage using table: ${this.settings.table}`
-  private base64KeyLength: number
 
   private logger = this.services.logger.getNameSpace('STORAGE_AUTH')
   private hashSettings = {
-      iterations: this.settings.iterations,
-      keyLength: this.settings.keyLength,
-      algorithm: this.settings.hash
+    iterations: this.settings.iterations,
+    keyLength: this.settings.keyLength,
+    algorithm: this.settings.hash
   }
 
   /**
@@ -41,7 +40,6 @@ export class StorageBasedAuthentication extends DeepstreamPlugin implements Deep
   */
   constructor (private settings: StorageAuthConfig, private services: DeepstreamServices) {
     super()
-    this.base64KeyLength = 4 * Math.ceil(this.settings.keyLength / 3)
   }
 
   public async whenReady (): Promise<void> {
@@ -67,6 +65,7 @@ export class StorageBasedAuthentication extends DeepstreamPlugin implements Deep
     }
 
     let userData: UserData
+    const storageId = `${this.settings.table}/${authData.username}`
     try {
       userData = await new Promise((resolve, reject) => this.services.storage.get(storageId, (err, version, data) => err ? reject(err) : resolve(data)))
     } catch (err) {
@@ -76,7 +75,6 @@ export class StorageBasedAuthentication extends DeepstreamPlugin implements Deep
         clientData: { error: 'Error retrieving user from storage' }
       }
     }
-    const storageId = `${this.settings.table}/${authData.username}`
 
     if (userData === null) {
       if (this.settings.createUser) {
@@ -88,27 +86,27 @@ export class StorageBasedAuthentication extends DeepstreamPlugin implements Deep
         const serverData = {
           created: Date.now()
         }
-        this.services.storage.set(storageId, 1, {
+        return await new Promise((resolve, reject) => this.services.storage.set(storageId, 1, {
           username: authData.username,
-          password: hash + salt,
+          password: hash.toString('ascii') + salt,
           clientData,
           serverData
-        }, () => {
-          return {
+        }, () =>
+          resolve({
             isValid: true,
             id: clientData.id,
             clientData,
             serverData
-          }
-        })
+          })
+        ))
       }
       return null
     }
 
-    const expectedHash = userData.password.substr(0, this.base64KeyLength)
-    const { hash: actualHash } = await createHash(authData.password, this.hashSettings, userData.password.substr(this.base64KeyLength))
+    const expectedHash = userData.password.substr(0, this.settings.keyLength)
+    const { hash: actualHash } = await createHash(authData.password, this.hashSettings, userData.password.substr(this.settings.keyLength))
 
-    if (expectedHash === actualHash.toString('base64')) {
+    if (expectedHash === actualHash.toString('ascii')) {
       return {
         isValid: true,
         id: userData.clientData.id,
