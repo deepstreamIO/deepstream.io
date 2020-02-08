@@ -19,6 +19,7 @@ sed -i 's@node:12@node:12-alpine@' Dockerfile
 echo 'Building node alpine'
 docker build . -t deepstreamio/deepstream.io:${PACKAGE_VERSION}-alpine -t deepstreamio/deepstream.io:latest-alpine
 echo 'Pushing node alpine'
-docker push deepstreamio/deepstream.io:${PACKAGE_VERSION}-alpine deepstreamio/deepstream.io:latest-alpine
+docker push deepstreamio/deepstream.io:${PACKAGE_VERSION}-alpine 
+docker push deepstreamio/deepstream.io:latest-alpine
 
 cd ../
