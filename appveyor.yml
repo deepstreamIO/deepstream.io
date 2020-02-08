@@ -27,15 +27,6 @@ artifacts:
   - path: '**\*.zip'
 
 deploy:
-  - provider: S3
-    access_key_id: ${ACCESS_KEY_ID}
-    secret_access_key: ${SECRET_ACCESS_KEY}
-    bucket: releases.deepstream.io
-    folder: $(APPVEYOR_REPO_NAME)
-    on:
-      branch: master
-      appveyor_repo_tag: false
-
   - provider: GitHub
     release: $(APPVEYOR_REPO_TAG_NAME)
     description: 'Release description'
