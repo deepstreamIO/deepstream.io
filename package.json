@@ -54,7 +54,7 @@
     "needle": "^2.4.0",
     "pino": "^5.16.0",
     "source-map-support": "^0.5.16",
-    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v16.1.0",
+    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v17.1.0",
     "uuid": "^3.4.0",
     "ws": "^7.2.1"
   },
