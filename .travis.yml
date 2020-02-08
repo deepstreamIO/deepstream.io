@@ -43,8 +43,8 @@ script:
   - npm run test:all:coverage;
   - npm run e2e:uws;
   # These tests don't pass on CI
-  - npm run e2e:v3 || true;
-  - npm run e2e:uws:v3 || true;
+  # - npm run e2e:v3 || true;
+  # - npm run e2e:uws:v3 || true;
 
 addons:
   apt:
@@ -64,16 +64,6 @@ before_deploy:
   - npm run tsc # Just incase you know
 
 deploy:
-- provider: s3
-  access_key_id: ${ACCESS_KEY_ID}
-  secret_access_key: ${SECRET_ACCESS_KEY}
-  bucket: releases.deepstream.io
-  skip_cleanup: true
-  acl: public_read
-  local_dir: build
-  upload-dir: ${TRAVIS_REPO_SLUG}
-  on:
-    branch: master
 - provider: releases
   skip_cleanup: true
   api_key: ${GITHUB_TOKEN}
