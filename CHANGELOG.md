@@ -1,4 +1,12 @@
+## [5.0.6] - 2020.02.08
 
+### Improvement
+
+- Updating all dependencies
+
+### Fixes
+
+Call onClientDisconnect from combined auth handler
 
 ## [5.0.5] - 2019.11.24
 
