@@ -41,7 +41,7 @@ matrix:
 script:
   - npm run lint;
   - npm run test:all:coverage;
-  - npm run e2e:uws || true;
+  - npm run e2e:uws;
   # These tests don't pass on CI
   - npm run e2e:v3 || true;
   - npm run e2e:uws:v3 || true;

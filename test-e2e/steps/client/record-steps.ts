@@ -112,7 +112,7 @@ Given(/^(.+) asks? if record "([^"]*)" exists$/, (clientExpression: string, reco
 })
 
 Then(/^(.+) gets? told record "([^"]*)" (.*)exists?$/, (clientExpression: string, recordName: string, adjective) => {
-  record.assert.has(clientExpression, recordName, adjective.indexOf('not') === -1)
+  record.assert.has(clientExpression, recordName, (adjective || '').indexOf('not') === -1)
 })
 
 Then(/^(.+) asks? for the version of record "([^"]*)"$/, (clientExpression: string, recordName: string, done) => {
