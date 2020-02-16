@@ -1,3 +1,9 @@
+## [5.0.8] - 2020.02.16
+  
+### Fixes
+
+Call onClientDisconnect with userId instead of socket
+
 ## [5.0.7] - 2020.02.08
   
 ### Fixes
