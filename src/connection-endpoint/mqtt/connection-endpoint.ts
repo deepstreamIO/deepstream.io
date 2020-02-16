@@ -80,7 +80,7 @@ export class MQTTConnectionEndpoint extends ConnectionEndpoint {
         if (!this.connections.has(client)) {
           return
         }
-        this.onSocketClose(this.connections.get(client))
+        this.onSocketClose(socketWrapper)
         this.connections.delete(client)
 
         socketWrapper.destroy()

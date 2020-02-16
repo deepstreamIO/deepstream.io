@@ -24,7 +24,7 @@ export default class BaseWebsocketConnectionEndpoint extends DeepstreamPlugin im
   private initialized: boolean = false
   private flushTimeout: NodeJS.Timeout | null = null
   private authenticatedSocketWrappers: Set<SocketWrapper> = new Set()
-  private scheduledSocketWrapperWrites: Set<SocketWrapper> = new Set()
+  private scheduledSocketWrapperWrites: Set<UnauthenticatedSocketWrapper> = new Set()
   private logInvalidAuthData: boolean = false
   private maxAuthAttempts: number = 3
   private unauthenticatedClientTimeout: number | boolean = false
@@ -45,7 +45,7 @@ export default class BaseWebsocketConnectionEndpoint extends DeepstreamPlugin im
   public closeWebsocketServer () {
   }
 
-  public onSocketWrapperClosed (socketWrapper: SocketWrapper) {
+  public onSocketWrapperClosed (socketWrapper: UnauthenticatedSocketWrapper) {
     socketWrapper.close()
   }
 
@@ -377,16 +377,16 @@ export default class BaseWebsocketConnectionEndpoint extends DeepstreamPlugin im
    * Notifies the (optional) onClientDisconnect method of the permission
    * that the specified client has disconnected
    */
-  public onSocketClose (socketWrapper: any): void {
+  public onSocketClose (socketWrapper: UnauthenticatedSocketWrapper): void {
     this.scheduledSocketWrapperWrites.delete(socketWrapper)
     this.onSocketWrapperClosed(socketWrapper)
 
-    if (this.authenticatedSocketWrappers.delete(socketWrapper)) {
+    if (this.authenticatedSocketWrappers.delete(socketWrapper as SocketWrapper)) {
+      const authenticatedSocketWrapper = socketWrapper as SocketWrapper
       if (this.services.authentication.onClientDisconnect) {
-        this.services.authentication.onClientDisconnect(socketWrapper.user)
+        this.services.authentication.onClientDisconnect(authenticatedSocketWrapper.userId)
       }
-
-      this.connectionListener.onClientDisconnected(socketWrapper)
+      this.connectionListener.onClientDisconnected(authenticatedSocketWrapper)
     }
   }
 
