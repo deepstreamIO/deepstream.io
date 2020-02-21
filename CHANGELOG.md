@@ -1,8 +1,14 @@
+## [5.0.9] - 2020.02.22
+  
+### Misc
+
+- Attempt to fix npm publishing issue due to travis bug
+
 ## [5.0.8] - 2020.02.16
   
 ### Fixes
 
-Call onClientDisconnect with userId instead of socket
+- Call onClientDisconnect with userId instead of socket
 
 ## [5.0.7] - 2020.02.08
   
@@ -18,7 +24,7 @@ Call onClientDisconnect with userId instead of socket
 
 ### Fixes
 
-Call onClientDisconnect from combined auth handler
+- Call onClientDisconnect from combined auth handler
 
 ## [5.0.5] - 2019.11.24
 
