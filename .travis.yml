@@ -66,6 +66,7 @@ before_deploy:
 deploy:
 - provider: releases
   skip_cleanup: true
+  edge: true
   api_key: ${GITHUB_TOKEN}
   file_glob: true
   skip_cleanup: true
@@ -80,6 +81,7 @@ deploy:
 - provider: npm
   email: "info@deepstream.io"
   api_key: ${NPM_TOKEN}
+  edge: true
   skip_cleanup: true
   on:
     tags: true
