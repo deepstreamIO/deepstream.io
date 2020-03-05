@@ -1,3 +1,9 @@
+## [5.0.11] - 2020.03.05
+  
+### Fix
+
+- adding debug logs for listening, and allowing to subscribers to listen to self
+
 ## [5.0.10] - 2020.03.05
   
 ### Fix
