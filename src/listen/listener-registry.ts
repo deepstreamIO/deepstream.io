@@ -317,12 +317,6 @@ export class ListenerRegistry implements SubscriptionListener {
         return
       }
 
-      this.services.logger.debug(
-        EVENT.LEADING_LISTEN,
-        `started for via startProviderSearch ${TOPIC[this.topic]}:${subscriptionName}`,
-        this.metaData,
-      )
-
       this.startLocalDiscoveryStage(subscriptionName, localListenArray)
     })
   }
@@ -368,13 +362,13 @@ export class ListenerRegistry implements SubscriptionListener {
     return
   }
 
-  const subscribers = this.clientRegistry.getLocalSubscribers(subscriptionName)
-
+  // const subscribers = this.clientRegistry.getLocalSubscribers(subscriptionName)
   // This stops a client from subscribing to itself, I think
-  if (subscribers && subscribers.has(provider!.socketWrapper)) {
-    this.stopProviderSearch(subscriptionName)
-    return
-  }
+  // if (subscribers && subscribers.has(provider!.socketWrapper)) {
+  //   this.services.logger.debug(EVENT.LOCAL_LISTEN, `Ignoring socket since it would be subscribing to itself for ${subscriptionName}`)
+  //   this.triggerNextProvider(subscriptionName)
+  //   return
+  // }
 
   provider!.responseTimeout = setTimeout(() => {
     provider!.socketWrapper.sendMessage({
@@ -431,6 +425,12 @@ export class ListenerRegistry implements SubscriptionListener {
   * Triggered when a subscription is stopped being provided by a node in the cluster
   */
   private onRecordStopProvided (subscriptionName: string): void {
+    this.services.logger.info(
+      'LISTEN_PROVIDER_STOPPED',
+      `listen provider has stopped for ${TOPIC[this.topic]}:${subscriptionName}`,
+      this.metaData,
+    )
+
     this.sendHasProviderUpdate(false, subscriptionName)
     if (!this.hasActiveProvider(subscriptionName) && this.clientRegistry.hasName(subscriptionName)) {
       this.startProviderSearch(subscriptionName)
