@@ -6,7 +6,7 @@ export class StdOutLogger extends DeepstreamPlugin implements DeepstreamLogger {
   public description = 'std out/err'
 
   private useColors: boolean
-  private currentLogLevel: LOG_LEVEL
+  private currentLogLevel!: LOG_LEVEL
   private logLevelColors: string[] = [
     'white',
     'green',
@@ -27,7 +27,7 @@ export class StdOutLogger extends DeepstreamPlugin implements DeepstreamLogger {
   }
 
   public async whenReady (): Promise<void> {
-    this.description = `${this.description} at level ${this.currentLogLevel}`
+    this.description = `${this.description} at level ${LOG_LEVEL[this.currentLogLevel]}`
   }
 
   public shouldLog (logLevel: number): boolean {
