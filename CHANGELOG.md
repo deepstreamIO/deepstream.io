@@ -1,3 +1,9 @@
+## [5.0.10] - 2020.03.05
+  
+### Fix
+
+- Fixing log level output as debug logs are being ignored
+
 ## [5.0.9] - 2020.02.22
   
 ### Misc
