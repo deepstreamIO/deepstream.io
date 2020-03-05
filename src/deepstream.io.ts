@@ -248,7 +248,7 @@ export class Deepstream extends EventEmitter {
   */
   private async serviceInit () {
     const readyPromises = Object.keys(this.services).reduce((promises, serviceName) => {
-      if (['connectionEndpoints', 'plugins', 'notifyFatalException'].includes(serviceName)) {
+      if (['connectionEndpoints', 'plugins', 'notifyFatalException', 'logger'].includes(serviceName)) {
         return promises
       }
       const service = (this.services as any)[serviceName] as DeepstreamPlugin

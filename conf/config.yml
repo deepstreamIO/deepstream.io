@@ -178,8 +178,6 @@ logger:
   type: default
   options:
     colors: true
-    # value of logLevel (line 4) will always overwrite this value
-    logLevel: INFO
 
   # log using json, this supports meta objects
   # name: pino

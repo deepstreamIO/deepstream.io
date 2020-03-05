@@ -231,7 +231,7 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
 
     if (!silent) {
       if (this.logger.shouldLog(LOG_LEVEL.DEBUG)) {
-        const logMsg = `for ${TOPIC[this.topic]}:${name} by ${socket.userId}`
+        const logMsg = `for ${TOPIC[this.topic] || STATE_REGISTRY_TOPIC[this.topic]}:${name} by ${socket.userId}`
         this.logger.debug(this.actions[this.constants.SUBSCRIBE], logMsg)
       }
       socket.sendAckMessage(message)

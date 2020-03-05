@@ -334,7 +334,7 @@ export class ListenerRegistry implements SubscriptionListener {
   private startLocalDiscoveryStage (subscriptionName: string, localListenArray: Provider[]): void {
     this.services.logger.debug(
       EVENT.LOCAL_LISTEN,
-      `started for ${TOPIC[this.topic]}:${subscriptionName}`,
+      `started for ${TOPIC[this.topic] || STATE_REGISTRY_TOPIC[this.topic]}:${subscriptionName}`,
       this.metaData,
     )
     this.triggerNextProvider(subscriptionName, localListenArray)
@@ -394,7 +394,7 @@ export class ListenerRegistry implements SubscriptionListener {
   private stopProviderSearch (subscriptionName: string): void {
     this.services.logger.debug(
       EVENT.LOCAL_LISTEN,
-      `stopped for ${TOPIC[this.topic]}:${subscriptionName}`,
+      `stopped for ${TOPIC[this.topic] || STATE_REGISTRY_TOPIC[this.topic]}:${subscriptionName}`,
       this.metaData,
     )
 
@@ -415,7 +415,7 @@ export class ListenerRegistry implements SubscriptionListener {
 
     this.services.logger.warn(
       EVENT.LOCAL_LISTEN,
-      `nothing to stop for ${TOPIC[this.topic]}:${subscriptionName}`,
+      `nothing to stop for ${TOPIC[this.topic] || STATE_REGISTRY_TOPIC[this.topic]}:${subscriptionName}`,
       this.metaData,
     )
   }
