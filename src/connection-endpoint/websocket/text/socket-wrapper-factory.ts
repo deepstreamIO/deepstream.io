@@ -6,6 +6,8 @@ import { WebSocketServerConfig } from '../../base/connection-endpoint'
 import { WSSocketWrapper } from '../../base/socket-wrapper'
 
 export class TextWSSocketWrapper extends WSSocketWrapper<string> {
+  public socketType = 'wsText'
+
   public getMessage (message: Message): string {
     return textMessageBuilder.getMessage(message, false)
   }

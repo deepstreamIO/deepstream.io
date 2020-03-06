@@ -4,6 +4,8 @@ import { SocketConnectionEndpoint, DeepstreamServices } from '@deepstream/types'
 import { WSSocketWrapper } from '../../base/socket-wrapper'
 
 export class JSONSocketWrapper extends WSSocketWrapper<string> {
+  public socketType = 'wsJSON'
+
   public getMessage (message: Message): string {
     return JSON.stringify(message)
   }

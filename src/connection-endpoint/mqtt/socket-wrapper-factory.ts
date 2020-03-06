@@ -9,6 +9,7 @@ import { parseMQTT } from './message-parser'
  * with deepstream's message structure
  */
 export class MQTTSocketWrapper implements UnauthenticatedSocketWrapper {
+  public socketType = 'mqtt'
   public userId: string | null = null
   public serverData: object | null = null
   public clientData: object | null = null

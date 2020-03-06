@@ -6,6 +6,8 @@ import { SocketConnectionEndpoint, DeepstreamServices } from '@deepstream/types'
 import { WSSocketWrapper } from '../../base/socket-wrapper'
 
 export class WSBinarySocketWrapper extends WSSocketWrapper<Uint8Array> {
+  public socketType = 'wsBinary'
+
   public getAckMessage (message: Message): Uint8Array {
     return binaryMessageBuilder.getMessage(message, true)
   }

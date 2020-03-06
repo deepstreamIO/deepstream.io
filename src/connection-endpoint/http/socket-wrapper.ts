@@ -4,6 +4,7 @@ import { DeepstreamServices, UnauthenticatedSocketWrapper, EVENT, DeepstreamAuth
 import { Message, ParseResult } from '../../constants'
 
 export default class HTTPSocketWrapper extends EventEmitter implements UnauthenticatedSocketWrapper {
+  public socketType = 'http'
   public userId: string | null = null
   public serverData: object | null = null
   public clientData: object | null = null

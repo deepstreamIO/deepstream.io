@@ -3,6 +3,7 @@ import { WebSocketServerConfig } from './connection-endpoint'
 import { SocketConnectionEndpoint, StatefulSocketWrapper, DeepstreamServices, UnauthenticatedSocketWrapper, SocketWrapper, EVENT } from '@deepstream/types'
 
 export abstract class WSSocketWrapper<SerializedType extends { length: number }> implements UnauthenticatedSocketWrapper {
+  public abstract socketType: string
   public isRemote: false = false
   public isClosed: boolean = false
   public uuid: number = Math.random()
