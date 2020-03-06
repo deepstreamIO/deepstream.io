@@ -1,29 +1,35 @@
+## [5.0.12] - 2020.03.06
+
+### Fix
+
+- Fixing issue where sending messages between multiple protocols can break. Verbose logging will be removed in the next release.
+
 ## [5.0.11] - 2020.03.05
-  
+
 ### Fix
 
 - adding debug logs for listening, and allowing to subscribers to listen to self
 
 ## [5.0.10] - 2020.03.05
-  
+
 ### Fix
 
 - Fixing log level output as debug logs are being ignored
 
 ## [5.0.9] - 2020.02.22
-  
+
 ### Misc
 
 - Attempt to fix npm publishing issue due to travis bug
 
 ## [5.0.8] - 2020.02.16
-  
+
 ### Fixes
 
 - Call onClientDisconnect with userId instead of socket
 
 ## [5.0.7] - 2020.02.08
-  
+
 ### Fixes
 
 - Fixes in storage auth handler by @abird
@@ -157,7 +163,7 @@ Limit the dead socket log to reduce insane spam.
 ### Feat
 
 Two new connection endpoints have been added. They are currently experimental and will be properly
-announced with associated documentation. 
+announced with associated documentation.
 
 One endpoint is mqtt! This allows us to support mqtt auth (using username and password), retain using records and QoS 1 using write acks. The only issue is since mqtt only supports one sort
 of concept (with flags distinguishing them) we bridge both events and records together. That means if you subscribe to 'temperature/london', you'll get the update from both a client doing `event.emit('temperature/london')` and `record.setData('temperature/london')`.
@@ -168,17 +174,17 @@ Value also injects a `name` variable which allows you to reference the name your
 
 ### Fix
 
-Subscription registry seemed to have a massive leak when it came to dead sockets! This has now been fixed. The sockets seemed to have gotten the remove event deleted earlier in their lifecycle which prohibited it from doing a proper clean up later. 
+Subscription registry seemed to have a massive leak when it came to dead sockets! This has now been fixed. The sockets seemed to have gotten the remove event deleted earlier in their lifecycle which prohibited it from doing a proper clean up later.
 
 ## [4.1.0] - 2019.08.30
-  
+
 ### Feat
 
 Backwards compatibility with V3 clients / text protocol using a ws-text connection endpoint
 
 This has a couple of small differences, like `has` is no longer supported and `snapshot` errors
-are exposed using the global `error` callback instead of via the response. Otherwise all the e2e 
-tests work, and best of all you can run both at the same time if you want to run JS 4.0 
+are exposed using the global `error` callback instead of via the response. Otherwise all the e2e
+tests work, and best of all you can run both at the same time if you want to run JS 4.0
 and Java 3.0 simultaneously!
 
 It is worth keeping in mind there is a small CPU overhead between switching from V3 custom deepstream
@@ -194,7 +200,7 @@ encoding to JSON (V4), so it is advised to monitor your CPU when possible!
 ```
 
 ## [4.0.6] - 2019.08.19
-  
+
 ### Feat
 
 Allow SUBSCRIBE and READ without CREATE actions, for clients that are in read only mode
@@ -204,13 +210,13 @@ Allow SUBSCRIBE and READ without CREATE actions, for clients that are in read on
 Adding declaration types (thank you @Vortex375!)
 
 ## [4.0.5] - 2019.08.09
-  
+
 ### Improvement
 
 Adding meta objects to logs and monitoring for easier tagging to monitoring solutions
 
 ## [4.0.4] - 2019.08.05
-  
+
 ### Fix
 
 - Don't buffer error messages in relation to connections, otherwise the client will get the close event first
