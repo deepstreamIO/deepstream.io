@@ -157,7 +157,9 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
         continue
       }
       if (!serializedMessages[socket.socketType]) {
-        delete message.data
+        if (message.parsedData) {
+          delete message.data
+        }
         this.logger.debug('SEND_TO_SUBSCRIBERS', `encoding ${name} with a different protocol ${socket.socketType} with data ${message.parsedData}`)
         serializedMessages[socket.socketType] = socket.getMessage(message)
       }
