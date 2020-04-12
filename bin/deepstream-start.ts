@@ -16,11 +16,11 @@ export const start = (program: Command) => {
     .option('-l, --lib-dir [directory]', 'path where to lookup for plugins like connectors and logger')
 
     .option('--host <host>', 'host for the http service')
-    .option('--port <port>', 'port for the http service', parseInteger.bind(null, '--port'))
+    .option<number>('--port <port>', 'port for the http service', (value: string) => parseInteger('--port', value))
     .option('--disable-auth', 'Force deepstream to use "none" auth type')
     .option('--disable-permissions', 'Force deepstream to use "none" permissions')
-    .option('--log-level <level>', 'Log messages with this level and above', parseLogLevel)
-    .option('--colors [true|false]', 'Enable or disable logging with colors', parseBoolean.bind(null, '--colors'))
+    .option<string>('--log-level <level>', 'Log messages with this level and above', parseLogLevel)
+    .option<boolean>('--colors [true|false]', 'Enable or disable logging with colors', (value: string) =>  parseBoolean('--colors', value))
     .option('--inspect <url>', 'Enable node inspector')
     .action(action)
 }
@@ -72,7 +72,7 @@ function parseLogLevel (logLevel: string) {
 * Used by commander to parse numbers and fails if invalid
 * value is passed in
 */
-function parseInteger (name: string, port: number) {
+function parseInteger (name: string, port: string) {
   const portNumber = Number(port)
   if (!portNumber) {
     console.error(`Provided ${name} must be an integer`)
@@ -85,7 +85,7 @@ function parseInteger (name: string, port: number) {
 * Used by commander to parse boolean and fails if invalid
 * value is passed in
 */
-function parseBoolean (name: string, enabled: 'true' | 'false') {
+function parseBoolean (name: string, enabled: string) {
   let isEnabled
   if (typeof enabled === 'undefined' || enabled === 'true') {
     isEnabled = true

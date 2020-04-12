@@ -1,5 +1,5 @@
 import { DeepstreamPlugin, DeepstreamAuthentication, DeepstreamServices, EVENT, DeepstreamAuthenticationResult } from '@deepstream/types'
-import * as uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import { Dictionary } from 'ts-essentials'
 import { createHash } from '../../../utils/utils'
 
