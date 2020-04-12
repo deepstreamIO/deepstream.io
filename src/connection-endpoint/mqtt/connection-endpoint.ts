@@ -2,7 +2,8 @@ import { createMQTTSocketWrapper} from './socket-wrapper-factory'
 import { DeepstreamServices, SocketWrapper, DeepstreamConfig, UnauthenticatedSocketWrapper, EVENT } from '@deepstream/types'
 import ConnectionEndpoint, { WebSocketServerConfig } from '../base/connection-endpoint'
 
-import { Server } from 'net'
+import { createServer as createTCPServer, Server as TCPServer } from 'net'
+import { createServer as createTLSServer, Server as TLSServer } from 'tls'
 // @ts-ignore
 import * as mqttCon from 'mqtt-connection'
 import { TOPIC, CONNECTION_ACTION, AUTH_ACTION } from '../../constants'
@@ -12,7 +13,11 @@ import { EventEmitter } from 'events'
 export interface MQTTConnectionEndpointConfig extends WebSocketServerConfig {
   port: number,
   host: string,
-  idleTimeout: number
+  idleTimeout: number,
+  ssl?: {
+    key: string,
+    cert: string
+  }
 }
 
 type MQTTPacket = any
@@ -24,7 +29,7 @@ type MQTTConnection = any
  * forwards messages it receives from authenticated sockets.
  */
 export class MQTTConnectionEndpoint extends ConnectionEndpoint {
-  private server!: Server
+  private server!: TCPServer | TLSServer
   private connections = new Map<MQTTConnection, UnauthenticatedSocketWrapper>()
   private logger = this.services.logger.getNameSpace('MQTT')
 
@@ -51,9 +56,16 @@ export class MQTTConnectionEndpoint extends ConnectionEndpoint {
    * Initialize the ws endpoint, setup callbacks etc.
    */
   public createWebsocketServer () {
-    this.server = new Server()
+    if (this.mqttOptions.ssl) {
+      this.server = createTLSServer({
+        key: this.mqttOptions.ssl.key,
+        cert: this.mqttOptions.ssl.cert
+      })
+    } else {
+      this.server = createTCPServer()
+    }
 
-    this.server.on('connection', (stream) => {
+    this.server.on(this.mqttOptions.ssl ? 'secureConnection' : 'connection', (stream) => {
       const client: MQTTConnection = mqttCon(stream)
       const socketWrapper = createMQTTSocketWrapper(client, {}, this.services, this.logger)
       this.connections.set(client, socketWrapper)
@@ -125,7 +137,7 @@ export class MQTTConnectionEndpoint extends ConnectionEndpoint {
     })
 
     this.server.listen(this.mqttOptions.port, this.mqttOptions.host, () => {
-      this.services.logger.info(EVENT.INFO, `Listening for MQTT connections on ${this.mqttOptions.host}:${this.mqttOptions.port}`)
+      this.services.logger.info(EVENT.INFO, `Listening for MQTT ${this.mqttOptions.ssl ? 'TLS' : 'TCP' } connections on ${this.mqttOptions.host}:${this.mqttOptions.port}`)
       this.isReady = true
       this.emitter.emit('ready')
     })
