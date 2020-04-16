@@ -166,7 +166,8 @@ export default class RecordHandler extends Handler<RecordMessage> {
       name: message.name,
       path: message.path,
       version: message.version,
-      data: message.data
+      data: message.data,
+      parsedData: message.parsedData
     }, false, null)
   }
 
