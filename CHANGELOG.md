@@ -1,3 +1,13 @@
+## [5.0.13] - 2020.04.16
+
+### Fix
+
+- Fixing issue where record updates via clusters didn't always get sent correctly to subscribers
+
+### Misc
+
+- Updating dependencies
+
 ## [5.0.12] - 2020.03.06
 
 ### Fix
