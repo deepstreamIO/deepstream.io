@@ -1,5 +1,5 @@
 import { createMQTTSocketWrapper} from './socket-wrapper-factory'
-import { DeepstreamServices, SocketWrapper, DeepstreamConfig, UnauthenticatedSocketWrapper, EVENT } from '@deepstream/types'
+import { DeepstreamServices, SocketWrapper, DeepstreamConfig, UnauthenticatedSocketWrapper, EVENT, LOG_LEVEL } from '@deepstream/types'
 import ConnectionEndpoint, { WebSocketServerConfig } from '../base/connection-endpoint'
 
 import { createServer as createTCPServer, Server as TCPServer } from 'net'
@@ -76,8 +76,10 @@ export class MQTTConnectionEndpoint extends ConnectionEndpoint {
         action: CONNECTION_ACTION.CHALLENGE
       }])
 
+      const logger = this.services.logger
       // client connected
       client.on('connect', function (packet: MQTTPacket) {
+        logger.debug(EVENT.INCOMING_CONNECTION, `MQTT Connection with username ${packet.username}`, { username: packet.username })
         socketWrapper.onMessage([{
           topic: TOPIC.AUTH,
           action: AUTH_ACTION.REQUEST,

@@ -1,3 +1,9 @@
+## [5.0.14] - 2020.04.19
+
+### Misc
+
+- Adding a log line for MQTT incoming connections for clarity
+
 ## [5.0.13] - 2020.04.16
 
 ### Fix
