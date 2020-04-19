@@ -1,5 +1,5 @@
 import { createMQTTSocketWrapper} from './socket-wrapper-factory'
-import { DeepstreamServices, SocketWrapper, DeepstreamConfig, UnauthenticatedSocketWrapper, EVENT, LOG_LEVEL } from '@deepstream/types'
+import { DeepstreamServices, SocketWrapper, DeepstreamConfig, UnauthenticatedSocketWrapper, EVENT } from '@deepstream/types'
 import ConnectionEndpoint, { WebSocketServerConfig } from '../base/connection-endpoint'
 
 import { createServer as createTCPServer, Server as TCPServer } from 'net'
