@@ -185,7 +185,7 @@ describe('config-initializer', () => {
       config.permission = {
         type: 'config',
         options: {
-          path: './basic-permission-config.json'
+          path: './test-e2e/config/permissions-complex.json'
         }
       }
       const result = configInitialiser.initialize(new EventEmitter(), config)

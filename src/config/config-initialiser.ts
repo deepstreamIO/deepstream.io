@@ -388,6 +388,10 @@ function handlePermissionStrategies (config: DeepstreamConfig, services: Deepstr
       throw new Error(`unable to resolve plugin ${permission.name || permission.path}`)
     }
   } else if (permission.type && (permissionStrategies as any)[permission.type]) {
+    if (config.permission.options && config.permission.options.path) {
+      const req = require
+      config.permission.options.permissions = req(fileUtils.lookupConfRequirePath(config.permission.options.path))
+    }
     PermissionHandlerClass = (permissionStrategies as any)[permission.type]
   } else {
     throw new Error(`Unknown permission type ${permission.type}`)
