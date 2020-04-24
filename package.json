@@ -11,7 +11,7 @@
   },
   "scripts": {
     "start:inspect": "npm run tsc && node --inspect dist/bin/deepstream",
-    "start": "ts-node --transpile-only --project tsconfig.json --files ./bin/deepstream.ts",
+    "start": "ts-node --transpile-only --project tsconfig.json --files ./bin/deepstream.ts start",
     "tsc": "sh scripts/tsc.sh",
     "license": "mkdir -p build && node scripts/license-aggregator > build/LICENSE && cat scripts/resources/missing-licenses.txt >> build/LICENSE",
     "lint": "tslint --project .",
