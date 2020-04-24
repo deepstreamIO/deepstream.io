@@ -14,17 +14,51 @@ jobs:
       - checkout
       - restore_cache:
           key: dependency-cache-windows-{{ checksum "package-lock.json" }}
-      - npm i
+      - run:  npm i
       - save_cache:
           key: dependency-cache-windows-{{ checksum "package-lock.json" }}
           paths:
             - ./node_modules
-      - npm t
+      - run:  npm t
       - run:
           command: bash scripts/package.sh
           shell: bash.exe
 
+  build-macos:
+    macos:
+      xcode: 11.3.0
+    steps:
+      - checkout
+      - restore_cache:
+          key: dependency-cache-macos-{{ checksum "package-lock.json" }}
+      - run: npm i
+      - save_cache:
+          key: dependency-cache-macos-{{ checksum "package-lock.json" }}
+          paths:
+            - ./node_modules
+      - run: npm t
+      - run: scripts/package.sh
+
+  build-linux:
+    docker:
+      - image: circleci/node:lts
+    steps:
+      - checkout
+      - restore_cache:
+          key: dependency-cache-linux-{{ checksum "package-lock.json" }}
+      - run: npm i
+      - save_cache:
+          key: dependency-cache-linux-{{ checksum "package-lock.json" }}
+          paths:
+            - ./node_modules
+      - run: npm run lint
+      - run: npm run test:all:coverage
+      - run: npm run e2e:uws
+      - run: scripts/package.sh
+
 workflows:
     master:
       jobs:
+        - build-linux
         - build-windows
+        - build-macos
