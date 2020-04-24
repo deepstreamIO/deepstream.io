@@ -1,0 +1,27 @@
+version: 2.1
+
+orbs:
+  node: circleci/node@1.1.6
+  coveralls: coveralls/coveralls@1.0.4
+  win: circleci/windows@2.2.0
+
+jobs:
+  build-windows:
+    executor:
+      name: win/default
+      shell: powershell.exe
+    steps:
+      - checkout
+      - run:
+          command: node --version
+      - run:
+          command: npm --version
+      - run:
+          command: npm i
+      - run:
+          command: npm test
+
+workflows:
+    master:
+      jobs:
+        - build-windows
