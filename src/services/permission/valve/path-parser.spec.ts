@@ -56,21 +56,21 @@ describe('parses valid paths in permission.json files', () => {
   it('parses a valid path with a variable', () => {
     const result = pathParser.parse('game-score/$gameId')
     expect(isRegExp(result.regexp)).to.equal(true)
-    expect(result.regexp.toString()).to.equal('/^game-score\\/([^\/]+)$/')
+    expect(result.regexp.toString()).to.equal('/^game-score\\/([^\\/]+)$/')
     expect(result.variables).to.deep.equal(['$gameId'])
   })
 
   it('parses a valid path with multiple variables', () => {
     const result = pathParser.parse('game-comment/$gameId/$userId/$commentId')
     expect(isRegExp(result.regexp)).to.equal(true)
-    expect(result.regexp.toString()).to.equal('/^game-comment\\/([^/]+)\\/([^/]+)\\/([^/]+)$/')
+    expect(result.regexp.toString()).to.equal('/^game-comment\\/([^\\/]+)\\/([^\\/]+)\\/([^\\/]+)$/')
     expect(result.variables).to.deep.equal(['$gameId', '$userId', '$commentId'])
   })
 
   it('parses a path with a mix of variables and wildcards', () => {
     const result = pathParser.parse('$recordName/*')
     expect(isRegExp(result.regexp)).to.equal(true)
-    expect(result.regexp.toString()).to.equal('/^([^/]+)\\/.*$/')
+    expect(result.regexp.toString()).to.equal('/^([^\\/]+)\\/.*$/')
     expect(result.variables).to.deep.equal(['$recordName'])
   })
 })
