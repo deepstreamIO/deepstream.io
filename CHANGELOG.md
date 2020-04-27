@@ -1,3 +1,13 @@
+## [5.0.15] - 2020.04.24
+
+### Fix
+
+- Allowing valve file to be passed in via nodeJS config (@jaime-ez)
+
+### Misc
+
+- Updating uws dependency
+
 ## [5.0.14] - 2020.04.19
 
 ### Misc
