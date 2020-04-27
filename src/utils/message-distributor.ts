@@ -25,7 +25,8 @@ export default class MessageDistributor {
       })
       return
     }
-    this.services.monitoring.onMessageReceived(message)
+    const { userId, serverData, clientData } = socketWrapper
+    this.services.monitoring.onMessageReceived(message, { userId, serverData, clientData })
     callback(socketWrapper, message)
   }
 
