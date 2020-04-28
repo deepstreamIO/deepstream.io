@@ -61,7 +61,7 @@ describe('validates rule strings from permissions.json', () => {
 
   it('rejects rules that are syntactiacally invalid', () => {
     expect(ruleParser.validate('a b')).to.equal('SyntaxError: Unexpected identifier')
-    expect(ruleParser.validate('user.id.toUpperCase(')).to.equal("SyntaxError: Unexpected token }")
+    expect(ruleParser.validate('user.id.toUpperCase(')).to.equal("SyntaxError: Unexpected token '}'")
   })
 
   it('rejects rules that reference old data without it being supported', () => {
