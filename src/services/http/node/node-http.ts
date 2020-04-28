@@ -53,9 +53,8 @@ export class NodeHTTP extends DeepstreamPlugin implements DeepstreamHTTPService 
   constructor (private pluginOptions: NodeHTTPInterface, private services: DeepstreamServices, config: DeepstreamConfig) {
     super()
 
-    this.origins = this.pluginOptions.origins || []
     if (this.pluginOptions.allowAllOrigins === false) {
-        if (this.origins.length === 0) {
+        if (!this.pluginOptions.origins) {
           this.services.logger.fatal(EVENT.INVALID_CONFIG_DATA, 'HTTP allowAllOrigins set to false but no origins provided')
         }
     }
@@ -326,7 +325,7 @@ export class NodeHTTP extends DeepstreamPlugin implements DeepstreamHTTPService 
       this.terminateResponse(response, HTTPStatus.FORBIDDEN, 'Forbidden Host.')
       return false
     }
-    if (this.origins.indexOf(requestOriginUrl) === -1) {
+    if (this.origins!.indexOf(requestOriginUrl) === -1) {
       if (!requestOriginUrl) {
         this.terminateResponse(
           response,
