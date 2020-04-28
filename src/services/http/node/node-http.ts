@@ -331,7 +331,7 @@ export class NodeHTTP extends DeepstreamPlugin implements DeepstreamHTTPService 
         this.terminateResponse(
           response,
           HTTPStatus.FORBIDDEN,
-          'CORS is configured for this this. All requests must set a valid "Origin" header.'
+          'CORS is configured for this. All requests must set a valid "Origin" header.'
         )
       } else {
         this.terminateResponse(
