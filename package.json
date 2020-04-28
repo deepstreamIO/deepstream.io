@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@deepstream/protobuf": "^1.0.1",
-    "@deepstream/types": "^2.0.9",
+    "@deepstream/types": "^2.1.0",
     "ajv": "^6.12.2",
     "better-ajv-errors": "^0.6.7",
     "body-parser": "^1.19.0",
