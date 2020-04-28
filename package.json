@@ -6,12 +6,15 @@
   "bin": {
     "deepstream": "./dist/bin/deepstream"
   },
+  "engines": {
+    "node": ">=12.0.0"
+  },
   "directories": {
     "test": "test"
   },
   "scripts": {
     "start:inspect": "npm run tsc && node --inspect dist/bin/deepstream",
-    "start": "ts-node --transpile-only --project tsconfig.json --files ./bin/deepstream.ts",
+    "start": "ts-node --transpile-only --project tsconfig.json --files ./bin/deepstream.ts start",
     "tsc": "sh scripts/tsc.sh",
     "license": "mkdir -p build && node scripts/license-aggregator > build/LICENSE && cat scripts/resources/missing-licenses.txt >> build/LICENSE",
     "lint": "tslint --project .",
@@ -39,7 +42,7 @@
   },
   "dependencies": {
     "@deepstream/protobuf": "^1.0.1",
-    "@deepstream/types": "^2.0.9",
+    "@deepstream/types": "^2.1.0",
     "ajv": "^6.12.2",
     "better-ajv-errors": "^0.6.7",
     "body-parser": "^1.19.0",

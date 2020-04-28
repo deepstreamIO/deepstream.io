@@ -14,6 +14,7 @@ interface UWSHTTPInterface extends uws.AppOptions {
     origins?: string[],
     maxMessageSize: number,
     headers: string[],
+    hostUrl: string
 }
 
 export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
@@ -24,10 +25,21 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
   private connections = new Map<uws.WebSocket, SocketWrapper>()
   private listenSocket!: uws.us_listen_socket
   private isGettingReady: boolean = false
+  private origins?: string[]
+  private methods: string[] = ['GET', 'POST', 'OPTIONS']
+  private methodsStr: string = this.methods.join(', ')
+  private headers: string[] = ['X-Requested-With', 'X-HTTP-Method-Override', 'Content-Type', 'Accept']
+  private headersLower: string[] = this.headers.map((header) => header.toLowerCase())
+  private headersStr: string = this.headers.join(', ')
 
   constructor (private pluginOptions: UWSHTTPInterface, private services: DeepstreamServices, config: DeepstreamConfig) {
     super()
 
+    if (this.pluginOptions.allowAllOrigins === false) {
+        if (!this.pluginOptions.origins) {
+          this.services.logger.fatal(EVENT.INVALID_CONFIG_DATA, 'HTTP allowAllOrigins set to false but no origins provided')
+        }
+    }
     // alias require to trick nexe from bundling it
     const req = require
     try {
@@ -56,6 +68,18 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
       this.server.listen(this.pluginOptions.host, this.pluginOptions.port, (token) => {
         /* Save the listen socket for later shut down */
         this.listenSocket = token
+        // handle options requests
+        this.server.options('/*', (response: uws.HttpResponse, request: uws.HttpRequest) => {
+          if (!this.pluginOptions.allowAllOrigins) {
+            if (!this.verifyOrigin(response, request)) {
+              return
+            }
+            this.handleOptions(response, request)
+          } else {
+            response.writeHeader('Access-Control-Allow-Origin', '*')
+            this.handleOptions(response, request)
+          }
+        })
 
         if (!!token) {
           resolve()
@@ -93,6 +117,14 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
 
       const meta = { headers: this.getHeaders(request), url: request.getUrl() }
 
+      if (!this.pluginOptions.allowAllOrigins) {
+        if (!this.verifyOrigin(response, request)) {
+          return
+        }
+      } else {
+        response.writeHeader('Access-Control-Allow-Origin', '*')
+      }
+
       readJson(response, (body: any) => {
         handler(
           body,
@@ -115,6 +147,14 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
       response.onAborted((err) => {
         console.log('error with get', err)
       })
+
+      if (!this.pluginOptions.allowAllOrigins) {
+        if (!this.verifyOrigin(response, request)) {
+          return
+        }
+      } else {
+        response.writeHeader('Access-Control-Allow-Origin', '*')
+      }
 
       handler(
         { headers: this.getHeaders(request), url: request.getUrl() },
@@ -224,6 +264,84 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
     return null
   }
 
+  private verifyOrigin (response: uws.HttpResponse, request: uws.HttpRequest): boolean {
+    const requestOriginUrl = request.getHeader('origin') as string || request.getHeader('referer') as string
+    const requestHostUrl = request.getHeader('host')
+
+    if (this.pluginOptions.hostUrl && requestHostUrl !== this.pluginOptions.hostUrl) {
+      this.terminateResponse(response, HTTPStatus.FORBIDDEN, 'Forbidden Host.')
+      return false
+    }
+
+    if (this.origins!.indexOf(requestOriginUrl) === -1) {
+      if (!requestOriginUrl) {
+        this.terminateResponse(
+          response,
+          HTTPStatus.FORBIDDEN,
+          'CORS is configured for this. All requests must set a valid "Origin" header.'
+        )
+      } else {
+        this.terminateResponse(
+          response,
+          HTTPStatus.FORBIDDEN,
+          `Origin "${requestOriginUrl}" is forbidden.`
+        )
+      }
+      return false
+    }
+
+    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin
+    response.writeHeader('Access-Control-Allow-Origin', requestOriginUrl)
+    response.writeHeader('Access-Control-Allow-Credentials', 'true')
+    response.writeHeader('Vary', 'Origin')
+
+    return true
+  }
+
+  private handleOptions (response: uws.HttpResponse, request: uws.HttpRequest): void {
+   const requestMethod = request.getHeader('access-control-request-method') as string | undefined
+   if (!requestMethod) {
+     this.terminateResponse(
+       response,
+       HTTPStatus.BAD_REQUEST,
+       'Missing header "Access-Control-Request-Method".'
+     )
+     return
+   }
+   if (this.methods.indexOf(requestMethod) === -1) {
+     this.terminateResponse(
+       response,
+       HTTPStatus.FORBIDDEN,
+       `Method ${requestMethod} is forbidden. Supported methods: ${this.methodsStr}`
+     )
+     return
+   }
+
+   const requestHeadersRaw = request.getHeader('access-control-request-headers') as string | undefined
+   if (!requestHeadersRaw) {
+     this.terminateResponse(
+       response,
+       HTTPStatus.BAD_REQUEST,
+       'Missing header "Access-Control-Request-Headers".'
+     )
+     return
+   }
+   const requestHeaders = requestHeadersRaw.split(',')
+   for (let i = 0; i < requestHeaders.length; i++) {
+     if (this.headersLower.indexOf(requestHeaders[i].trim().toLowerCase()) === -1) {
+       this.terminateResponse(
+         response,
+         HTTPStatus.FORBIDDEN,
+         `Header ${requestHeaders[i]} is forbidden. Supported headers: ${this.headersStr}`
+       )
+       return
+     }
+   }
+
+   response.writeHeader('Access-Control-Allow-Methods', this.methodsStr)
+   response.writeHeader('Access-Control-Allow-Headers', this.headersStr)
+   this.terminateResponse(response, HTTPStatus.NO_CONTENT)
+ }
 }
 
 /* Helper function for reading a posted JSON body */

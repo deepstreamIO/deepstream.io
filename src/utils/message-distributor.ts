@@ -25,7 +25,7 @@ export default class MessageDistributor {
       })
       return
     }
-    this.services.monitoring.onMessageReceived(message)
+    this.services.monitoring.onMessageReceived(message, socketWrapper)
     callback(socketWrapper, message)
   }
 

@@ -124,7 +124,7 @@ export class NodeHTTP extends DeepstreamPlugin implements DeepstreamHTTPService 
   }
 
   public registerWebsocketEndpoint (path: string, createSocketWrapper: SocketWrapperFactory, webSocketConnectionEndpoint: WebSocketConnectionEndpoint) {
-    const server = new WebSocket.Server({ noServer: true })
+    const server = new WebSocket.Server({ noServer: true, maxPayload:  webSocketConnectionEndpoint.wsOptions.maxMessageSize})
     server.on('connection', (websocket: WebSocket, handshakeData: SocketHandshakeData) => {
       websocket.on('error', (error) => {
         this.services.logger.error(EVENT.ERROR, `Error on websocket: ${error.message}`)
@@ -330,7 +330,7 @@ export class NodeHTTP extends DeepstreamPlugin implements DeepstreamHTTPService 
         this.terminateResponse(
           response,
           HTTPStatus.FORBIDDEN,
-          'CORS is configured for this this. All requests must set a valid "Origin" header.'
+          'CORS is configured for this. All requests must set a valid "Origin" header.'
         )
       } else {
         this.terminateResponse(
