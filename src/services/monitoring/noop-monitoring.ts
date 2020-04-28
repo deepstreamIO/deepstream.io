@@ -1,4 +1,4 @@
-import { DeepstreamPlugin, DeepstreamMonitoring, SocketUserData, LOG_LEVEL, EVENT } from '@deepstream/types'
+import { DeepstreamPlugin, DeepstreamMonitoring, SocketData, LOG_LEVEL, EVENT } from '@deepstream/types'
 import { Message } from '../../constants'
 
 export class NoopMonitoring extends DeepstreamPlugin implements DeepstreamMonitoring {
@@ -10,7 +10,7 @@ export class NoopMonitoring extends DeepstreamPlugin implements DeepstreamMonito
   public onLogin (allowed: boolean, endpointType: string): void {
   }
 
-  public onMessageReceived (message: Message, socketUserData: SocketUserData): void {
+  public onMessageReceived (message: Message, socketData: SocketData): void {
   }
 
   public onMessageSend (message: Message): void {
