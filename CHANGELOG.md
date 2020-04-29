@@ -1,3 +1,13 @@
+## [5.0.16] - 2020.04.28
+
+### Feat  
+
+- SocketData is passed to monitoring service in order to allow for fined grain monitoring.  
+
+### Fix  
+
+- uws service accepts options requests and enforces CORS params  
+
 ## [5.0.15] - 2020.04.24
 
 ### Fix
