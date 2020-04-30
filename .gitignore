@@ -1,3 +1,4 @@
+heap-snapshots
 .nyc_combined_coverage
 dist
 .DS_Store

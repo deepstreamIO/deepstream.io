@@ -1,5 +1,11 @@
 FROM node:10
+
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+RUN unzip awscliv2.zip
+RUN ./aws/install
+
 COPY package*.json ./
+
 RUN npm install --production \
     @deepstream/cache-redis \
     # @deepstream/cache-memcached \
@@ -9,7 +15,8 @@ RUN npm install --production \
     @deepstream/storage-rethinkdb \
     @deepstream/storage-elasticsearch \
     @deepstream/storage-postgres \
-    @deepstream/logger-winston
+    @deepstream/logger-winston \
+    @deepstream/plugin-aws
 
 COPY . ./
 

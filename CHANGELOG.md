@@ -1,6 +1,44 @@
-## [5.0.16] - 2020.04.28
+## [5.0.16] - 2020.04.30
 
 ### Feat  
+
+- Add two new plugins:
+
+  - heap-snapshot
+    This allows deepstream to save its heap space for analysis by v8 tools
+    
+    ```yaml
+    plugins:
+      heap-snapshot:
+        name: 'heap-snapshot'
+        options:
+          interval: 60000
+          outputDir: file(../heap-snapshots)
+    ```
+
+  - aws
+    This is a general plugin for all AWS services, currently allows us to sync
+    the heap-snapshot directory to S3 which is useful when running via docker.
+    The functionality however is generic, so you could have a plugin that outputs
+    other useful data.
+    You can also very simply add more services (or more of the same ones). This
+    just makes it easier for us to maintain the plugin.
+
+    ```yaml
+    plugins:
+      aws:
+        name: aws
+        options:
+          accessKeyId: ${AWS_ACCESS_KEY}
+          secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
+          services:
+            - type: s3-sync
+              options:
+                syncInterval: 60000
+                syncDir: file(../heap-snapshots)
+                bucketName: ${SYNC_BUCKET_NAME}
+                bucketRegion: ${AWS_DEFAULT_REGION}
+    ```
 
 - SocketData is passed to monitoring service in order to allow for fined grain monitoring.  
 

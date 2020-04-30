@@ -210,10 +210,9 @@ function handleCustomPlugins (config: DeepstreamConfig, services: any): void {
     if (plugin.name === 'heap-snapshot') {
       services.plugins[key] = new HeapSnapshot(plugin.options || {}, services)
     } else {
-      const PluginConstructor = resolvePluginClass(plugin, key, services.logger)
+      const PluginConstructor = resolvePluginClass(plugin, 'plugin', services.logger)
       services.plugins[key] = new PluginConstructor(plugin.options || {}, services, config)
     }
-
   }
 }
 
@@ -286,7 +285,7 @@ function resolvePluginClass (plugin: PluginConfig, type: string, logger: Deepstr
       es6Adaptor = req(requirePath)
       pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
     } catch (error) {
-      logger.fatal(EVENT.CONFIG_ERROR, `Error loading plugin ${type} via path ${requirePath}`)
+      logger.fatal(EVENT.CONFIG_ERROR, `Error loading ${type} plugin via path ${requirePath}`)
       // Throw error due to how tests are written
       throw new Error()
     }
@@ -314,7 +313,7 @@ function resolvePluginClass (plugin: PluginConfig, type: string, logger: Deepstr
       es6Adaptor = req(requirePath)
       pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
     } catch (error) {
-      logger.fatal(EVENT.CONFIG_ERROR, `Error loading plugin ${type} via name ${plugin.name}`)
+      logger.fatal(EVENT.CONFIG_ERROR, `Error loading ${type} plugin via name ${plugin.name}`)
       // Throw error due to how tests are written
       throw new Error()
     }
@@ -322,7 +321,7 @@ function resolvePluginClass (plugin: PluginConfig, type: string, logger: Deepstr
     pluginConstructor = defaultPlugins.get(type as any)
   } else {
     // This error is used to bubble the event due to how tests are written
-    throw new Error(`Neither name nor path property found for ${type}, plugin type: ${plugin.type}`)
+    throw new Error(`Neither name nor path property found for ${type} plugin type: ${plugin.type}`)
   }
   return pluginConstructor
 }

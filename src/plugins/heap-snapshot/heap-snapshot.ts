@@ -37,7 +37,6 @@ export default class HeapSnapshot extends DeepstreamPlugin {
 
     public async whenReady (): Promise<void> {
         this.snapshotInterval = setInterval(() => this.outputHeapSnapshot(), this.options.interval)
-        this.outputHeapSnapshot()
     }
 
     public async close (): Promise<void> {
