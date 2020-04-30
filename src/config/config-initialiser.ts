@@ -35,6 +35,7 @@ import HTTPMonitoring from '../services/monitoring/http/monitoring-http'
 import LogMonitoring from '../services/monitoring/log/monitoring-log'
 import { InitialLogs } from './js-yaml-loader'
 import * as configValidator from './config-validator'
+import HeapSnapshot from '../plugins/heap-snapshot/heap-snapshot'
 
 let commandLineArguments: any
 
@@ -206,10 +207,13 @@ function handleCustomPlugins (config: DeepstreamConfig, services: any): void {
 
   for (const key in plugins) {
     const plugin = plugins[key]
-    if (plugin) {
+    if (plugin.name === 'heap-snapshot') {
+      services.plugins[key] = new HeapSnapshot(plugin.options || {}, services)
+    } else {
       const PluginConstructor = resolvePluginClass(plugin, key, services.logger)
       services.plugins[key] = new PluginConstructor(plugin.options || {}, services, config)
     }
+
   }
 }
 
@@ -277,9 +281,13 @@ function resolvePluginClass (plugin: PluginConfig, type: string, logger: Deepstr
   let pluginConstructor
   let es6Adaptor
   if (plugin.path != null) {
-    requirePath = fileUtils.lookupLibRequirePath(plugin.path)
-    es6Adaptor = req(requirePath)
-    pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
+    try {
+      requirePath = fileUtils.lookupLibRequirePath(plugin.path)
+      es6Adaptor = req(requirePath)
+      pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
+    } catch (error) {
+      logger.fatal(EVENT.CONFIG_ERROR, `Error loading plugin ${type} via path ${requirePath}`)
+    }
   } else if (plugin.name != null && type) {
     try {
       requirePath = fileUtils.lookupLibRequirePath(`@deepstream/${type.toLowerCase()}-${plugin.name.toLowerCase()}`)
@@ -292,14 +300,18 @@ function resolvePluginClass (plugin: PluginConfig, type: string, logger: Deepstr
       } catch (secondError) {
         logger.debug(EVENT.CONFIG_ERROR, `Error loading module ${firstPath}: ${firstError}`)
         logger.debug(EVENT.CONFIG_ERROR, `Error loading module ${requirePath}: ${secondError}`)
-        throw new Error(`Cannot load module ${firstPath} or ${requirePath}`)
+        logger.fatal(EVENT.CONFIG_ERROR, 'Error loading module, exiting')
       }
     }
     pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
   } else if (plugin.name != null) {
-    requirePath = fileUtils.lookupLibRequirePath(plugin.name)
-    es6Adaptor = req(requirePath)
-    pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
+    try {
+      requirePath = fileUtils.lookupLibRequirePath(plugin.name)
+      es6Adaptor = req(requirePath)
+      pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
+    } catch (error) {
+      logger.fatal(EVENT.CONFIG_ERROR, `Error loading plugin ${type} via name ${plugin.name}`)
+    }
   } else if (plugin.type === 'default' && defaultPlugins.has(type as any)) {
     pluginConstructor = defaultPlugins.get(type as any)
   } else {

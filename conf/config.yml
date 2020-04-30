@@ -308,3 +308,9 @@ monitoring:
 # plugins:
 #   custom:
 #     path: '...'
+
+#   heap-snapshot:
+#     name: 'heap-snapshot'
+#     options:
+#       interval: 60000
+#       outputDir: file(../heap-snapshots)

@@ -31,3 +31,6 @@
 [submodule "connectors/logger/winston"]
 	path = connectors/logger/winston
 	url = git@github.com:deepstreamIO/deepstream.io-logger-winston.git
+[submodule "plugins/aws"]
+	path = plugins/aws
+	url = git@github.com:deepstreamIO/deepstream.io-plugin-aws.git
