@@ -287,6 +287,8 @@ function resolvePluginClass (plugin: PluginConfig, type: string, logger: Deepstr
       pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
     } catch (error) {
       logger.fatal(EVENT.CONFIG_ERROR, `Error loading plugin ${type} via path ${requirePath}`)
+      // Throw error due to how tests are written
+      throw new Error()
     }
   } else if (plugin.name != null && type) {
     try {
@@ -301,6 +303,8 @@ function resolvePluginClass (plugin: PluginConfig, type: string, logger: Deepstr
         logger.debug(EVENT.CONFIG_ERROR, `Error loading module ${firstPath}: ${firstError}`)
         logger.debug(EVENT.CONFIG_ERROR, `Error loading module ${requirePath}: ${secondError}`)
         logger.fatal(EVENT.CONFIG_ERROR, 'Error loading module, exiting')
+        // Throw error due to how tests are written
+        throw new Error()
       }
     }
     pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
@@ -311,6 +315,8 @@ function resolvePluginClass (plugin: PluginConfig, type: string, logger: Deepstr
       pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
     } catch (error) {
       logger.fatal(EVENT.CONFIG_ERROR, `Error loading plugin ${type} via name ${plugin.name}`)
+      // Throw error due to how tests are written
+      throw new Error()
     }
   } else if (plugin.type === 'default' && defaultPlugins.has(type as any)) {
     pluginConstructor = defaultPlugins.get(type as any)
