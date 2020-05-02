@@ -175,14 +175,14 @@ function handleLogger (config: DeepstreamConfig, services: DeepstreamServices): 
     logger.error = logger.error || logger.log.bind(logger, LOG_LEVEL.ERROR)
   }
 
-  if (LOG_LEVEL[config.logLevel] !== undefined) {
-    if (typeof config.logLevel === 'string') {
-      logger.setLogLevel(LOG_LEVEL[config.logLevel])
+  if (LOG_LEVEL[configOptions.logLevel] !== undefined) {
+    if (typeof configOptions.logLevel === 'string') {
+      logger.setLogLevel(LOG_LEVEL[configOptions.logLevel])
     } else {
-      logger.setLogLevel(config.logLevel)
+      logger.setLogLevel(configOptions.logLevel)
     }
-  } else if (config.logLevel) {
-    throw new Error (`Unknown logLevel ${LOG_LEVEL[config.logLevel]}`)
+  } else if (configOptions.logLevel) {
+    throw new Error (`Unknown logLevel ${LOG_LEVEL[configOptions.logLevel]}`)
   }
 
   return logger
