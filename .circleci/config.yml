@@ -25,7 +25,7 @@ jobs:
 
   build-macos:
     macos:
-      xcode: 11.3.0
+      xcode: 10.1.0
     steps:
       - checkout
       - restore_cache:
@@ -55,7 +55,7 @@ jobs:
       - run: npm run e2e:uws
        # Package time
       - run: sudo apt-get install ruby ruby-dev rubygems build-essential
-      - run: gem install --no-document fpm || echo "fpm install failed"
+      - run: sudo gem install --no-document fpm || echo "fpm install failed"
       - run: scripts/package.sh
 
 workflows:
