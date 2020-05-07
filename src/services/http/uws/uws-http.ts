@@ -1,4 +1,4 @@
-import { DeepstreamPlugin, DeepstreamHTTPService, PostRequestHandler, GetRequestHandler, DeepstreamServices, DeepstreamConfig, SocketWrapper, WebSocketConnectionEndpoint, SocketWrapperFactory, EVENT } from '@deepstream/types'
+import { DeepstreamPlugin, DeepstreamHTTPService, PostRequestHandler, GetRequestHandler, DeepstreamServices, DeepstreamConfig, SocketWrapper, WebSocketConnectionEndpoint, SocketWrapperFactory, EVENT, DeepstreamHTTPMeta, DeepstreamHTTPResponse } from '@deepstream/types'
 // import * as HTTPStatus from 'http-status'
 import { Dictionary } from 'ts-essentials'
 import { STATES } from '../../../constants'
@@ -79,6 +79,10 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
             response.writeHeader('Access-Control-Allow-Origin', '*')
             this.handleOptions(response, request)
           }
+        })
+
+        this.registerGetPathPrefix(this.pluginOptions.healthCheckPath, (meta: DeepstreamHTTPMeta, response: DeepstreamHTTPResponse) => {
+          response(null)
         })
 
         if (!!token) {
