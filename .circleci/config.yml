@@ -14,7 +14,7 @@ jobs:
       - checkout
       - run:
           command: node/install-packages
-          shell: bashe.exe
+          shell: bash.exe
       - run: npm t
       - run:
           command: bash scripts/package.sh
@@ -34,11 +34,13 @@ jobs:
       - image: circleci/node:lts
     steps:
       - checkout
-      - run: gem install --no-document fpm || echo "fpm install failed"
       - node/install-packages
       - run: npm run lint
       - run: npm run test:all:coverage
       - run: npm run e2e:uws
+      # Package time
+      - run: apt-get install ruby ruby-dev rubygems build-essential
+      - run: gem install --no-document fpm || echo "fpm install failed"
       - run: scripts/package.sh
 
 workflows:
