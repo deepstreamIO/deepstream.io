@@ -71,7 +71,7 @@
     "@types/mkdirp": "^1.0.0",
     "@types/mocha": "^7.0.2",
     "@types/needle": "^2.0.4",
-    "@types/node": "^13.13.4",
+    "@types/node": "^13.13.5",
     "@types/pino": "^6.0.0",
     "@types/sinon": "^9.0.0",
     "@types/sinon-chai": "^3.2.4",
@@ -92,7 +92,7 @@
     "sinon": "^9.0.2",
     "sinon-chai": "^3.5.0",
     "ts-essentials": "^6.0.4",
-    "ts-node": "^8.9.1",
+    "ts-node": "^8.10.1",
     "tslint": "^6.1.2",
     "typescript": "^3.8.3",
     "watch": "^1.0.2"
