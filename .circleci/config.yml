@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  node: circleci/node@1.1.6
+  node: circleci/node@2.1.0
   coveralls: coveralls/coveralls@1.0.4
   win: circleci/windows@2.2.0
 
@@ -12,14 +12,10 @@ jobs:
       shell: powershell.exe
     steps:
       - checkout
-      - restore_cache:
-          key: dependency-cache-windows-{{ checksum "package-lock.json" }}
-      - run:  npm i
-      - save_cache:
-          key: dependency-cache-windows-{{ checksum "package-lock.json" }}
-          paths:
-            - ./node_modules
-      - run:  npm t
+      - run:
+          command: node/install-packages
+          shell: bashe.exe
+      - run: npm t
       - run:
           command: bash scripts/package.sh
           shell: bash.exe
@@ -29,13 +25,7 @@ jobs:
       xcode: 11.3.0
     steps:
       - checkout
-      - restore_cache:
-          key: dependency-cache-macos-{{ checksum "package-lock.json" }}
-      - run: npm i
-      - save_cache:
-          key: dependency-cache-macos-{{ checksum "package-lock.json" }}
-          paths:
-            - ./node_modules
+      - node/install-packages
       - run: npm t
       - run: scripts/package.sh
 
@@ -44,13 +34,8 @@ jobs:
       - image: circleci/node:lts
     steps:
       - checkout
-      - restore_cache:
-          key: dependency-cache-linux-{{ checksum "package-lock.json" }}
-      - run: npm i
-      - save_cache:
-          key: dependency-cache-linux-{{ checksum "package-lock.json" }}
-          paths:
-            - ./node_modules
+      - run: gem install --no-document fpm || echo "fpm install failed"
+      - node/install-packages
       - run: npm run lint
       - run: npm run test:all:coverage
       - run: npm run e2e:uws
