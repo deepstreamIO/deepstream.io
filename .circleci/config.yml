@@ -25,8 +25,12 @@ jobs:
 
   build-macos:
     macos:
-      xcode: 10.1.0
+      xcode: 11.4.1
     steps:
+      - run: curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.2/install.sh | bash
+      - run: nvm install 12
+      - run: nvm use 12
+
       - checkout
       - restore_cache:
           key: dependency-cache-macos-{{ checksum "package-lock.json" }}
