@@ -56,10 +56,8 @@ jobs:
       - run: npm run lint
       - run: npm run test:all:coverage
       - run: npm run e2e:uws
-       # Package time
-      - run: sudo apt-get install ruby ruby-dev rubygems build-essential rpm
-      - run: sudo gem install --no-document fpm || echo "fpm install failed"
-      - run: scripts/package.sh
+       # Package time, ignoring distros
+      - run: scripts/package.sh true
 
 workflows:
     master:
