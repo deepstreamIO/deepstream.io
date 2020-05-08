@@ -27,9 +27,8 @@ jobs:
     macos:
       xcode: 11.4.1
     steps:
-      - run: curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.2/install.sh | bash
-      - run: nvm install 12
-      - run: nvm use 12
+      - run: sudo npm install -g n
+      - run: sudo n 12
       - checkout
       - restore_cache:
           key: dependency-cache-macos-{{ checksum "package-lock.json" }}
@@ -56,8 +55,10 @@ jobs:
       - run: npm run lint
       - run: npm run test:all:coverage
       - run: npm run e2e:uws
-       # Package time, ignoring distros
-      - run: scripts/package.sh true
+       # Package time
+      - run: sudo apt-get install ruby ruby-dev rubygems build-essential rpm
+      - run: sudo gem install --no-document fpm || echo "fpm install failed"
+      - run: scripts/package.sh
 
 workflows:
     master:
