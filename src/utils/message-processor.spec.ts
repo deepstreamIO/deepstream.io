@@ -39,14 +39,6 @@ describe('the message processor only forwards valid, authorized messages', () =>
     client.socketWrapperMock.verify()
   })
 
-  it('ignores heartbeats ping messages', () => {
-    client.socketWrapperMock
-      .expects('sendMessage')
-      .never()
-
-    messageProcessor.process(client.socketWrapper, [{ topic: TOPIC.CONNECTION, action: CONNECTION_ACTION.PING }])
-  })
-
   it('handles permission errors', () => {
     permissionMock.nextCanPerformActionResult = 'someError'
 
