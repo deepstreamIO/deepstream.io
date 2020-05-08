@@ -25,7 +25,7 @@ jobs:
 
   build-macos:
     macos:
-      xcode: 11.4.1
+      xcode: 10.1.0
     steps:
       - run: sudo npm install -g n
       - run: sudo n 12
