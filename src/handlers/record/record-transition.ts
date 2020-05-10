@@ -87,7 +87,8 @@ export class RecordTransition {
         name: this.name,
         version: this.version,
         parsedData: this.data,
-        isWriteAck: false,
+        isWriteAck: step.message.isWriteAck,
+        correlationId: step.message.correlationId
       })
 
       this.services.logger.warn(
