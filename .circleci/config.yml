@@ -64,5 +64,9 @@ workflows:
     master:
       jobs:
         - build-linux
-        - build-windows
-        - build-macos
+        - build-windows:
+            requires:
+              - build-linux
+        - build-macos:
+            requires:
+              - build-linux

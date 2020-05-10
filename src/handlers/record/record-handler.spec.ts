@@ -238,7 +238,8 @@ describe('record handler handles messages', () => {
         name: ExistingVersion.name,
         version: ExistingVersion.version,
         parsedData: M.recordData,
-        isWriteAck: false
+        isWriteAck: false,
+        correlationId: undefined
       })
 
     recordHandler.handle(client.socketWrapper, ExistingVersion)
@@ -339,7 +340,8 @@ describe('record handler handles messages', () => {
         version: M.recordVersion,
         parsedData: M.recordData,
         name: M.recordUpdate.name,
-        isWriteAck: false
+        isWriteAck: false,
+        correlationId: undefined
       })
 
     recordHandler.handle(client.socketWrapper, M.recordUpdate)
