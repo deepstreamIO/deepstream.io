@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "A server that simply gathers anonymous data and inserts it into postgres",
   "scripts": {
-    "start": "ts-node telemetry-server.ts",
+    "start": "ts-node telemetry-server.ts"
   },
   "keywords": [
     "deepstream",

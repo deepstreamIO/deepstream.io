@@ -28,10 +28,9 @@ telemetry:
     # without actually sending it
     debug: false
     # An anonymous uuid that allows us to know its one unique
-    # deployment. Please don't generate these randomly, it really
-    # skews up analytics. This is in the config and user generated
-    # because we don't want to
-    deploymentId: 4630395f-34cd-4b4a-a9b7-4e1388086805
+    # deployment. Please don't generate these randomly if using
+    # node, it really skews up analytics. 
+    # deploymentId: <uuid goes here>
 
 rpc:
   # Timeout for client RPC acknowledgement

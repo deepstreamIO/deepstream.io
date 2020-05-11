@@ -1,3 +1,43 @@
+## [5.1.0] - 2020.05.11
+
+### Feat
+
+Adding telemetry. The server code is also in the rep (under telemetry-server).
+
+This uses a random uuid as your deploymentId, which is pretty much the only way
+I can avoid having thousands of records in the database from one machine restarting / ci process.
+
+If possible please use a different ID for production environments!
+
+```yaml
+# This disables specific feature in DS, which is a more performant way
+# than disabling via permissions and is also how telemetry figures out
+# what features are enabled
+enabledFeatures:
+  record: true
+  event: true
+  rpc: true
+  presence: true
+
+telemetry:
+  type: deepstreamIO
+  options:
+    # Disable telemetry entirely
+    enabled: true
+    # Prints whatever will be sent to the telemetry endpoint,
+    # without actually sending it
+    debug: false
+    # An anonymous uuid that allows us to know its one unique
+    # deployment. Please don't generate these randomly, it really
+    # skews up analytics. This is in the config and user generated
+    # because we don't want to
+    deploymentId: <uuid goes here>
+```
+
+### Fix
+
+Fixes by the awesome @jaime-ez around heartbeats and ping messages!
+
 ## [5.0.16] - 2020.04.30
 
 ### Feat  

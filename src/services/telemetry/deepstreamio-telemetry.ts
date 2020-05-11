@@ -6,6 +6,7 @@ import { Dictionary } from 'ts-essentials'
 import { post } from 'needle'
 
 const TELEMETRY_URL = process.env.TELEMETRY_URL || 'http://telemetry.deepstream.io:8080/api/v1/startup'
+const DEFAULT_UUID = '00000000-0000-0000-0000-000000000000'
 
 export interface DeepstreamIOTelemetryOptions {
     enabled: boolean
@@ -27,12 +28,14 @@ export class DeepstreamIOTelemetry extends DeepstreamPlugin implements Deepstrea
                 EVENT.INFO,
                 'Telemetry disabled, please enable in order to support development of this project. Further info found at https://deepstream.io/blog/20200512-5.1-telemetry/'
             )
+            return
         }
         if (this.pluginOptions.deploymentId === undefined || !validateUUID(this.pluginOptions.deploymentId)) {
-            this.logger.fatal(
+            this.logger.error(
                 EVENT.ERROR,
                 `Invalid deployment id, must be uuid format. Feel free to use this one "${uuid()}"`
             )
+            this.pluginOptions.deploymentId = DEFAULT_UUID
         }
     }
 
