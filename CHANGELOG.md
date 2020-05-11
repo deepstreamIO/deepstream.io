@@ -1,3 +1,11 @@
+## [5.1.1] - 2020.05.11
+
+### Fix
+
+Disabling telemetry for tests
+
+Fixing critical bug with client sdk version tracking
+
 ## [5.1.0] - 2020.05.11
 
 ### Feat

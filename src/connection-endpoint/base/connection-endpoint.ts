@@ -190,6 +190,9 @@ export default class BaseWebsocketConnectionEndpoint extends DeepstreamPlugin im
 
     if (msg.action === CONNECTION_ACTION.CHALLENGE) {
       if (msg.sdkType && msg.sdkVersion) {
+        if (!this.clientVersions[msg.sdkType]) {
+          this.clientVersions[msg.sdkType] = new Set()
+        }
         this.clientVersions[msg.sdkType].add(msg.sdkVersion)
       }
       socketWrapper.onMessage = socketWrapper.authCallback!
