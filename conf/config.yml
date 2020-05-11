@@ -3,8 +3,6 @@
 serverName: UUID
 # Show the deepstream logo on startup
 showLogo: true
-# Log messages with this level and above. Valid levels are DEBUG, INFO, WARN, ERROR, OFF
-logLevel: INFO
 # Plugin startup timeout – deepstream init will fail if any plugins fail to emit a 'done' event within this timeout
 dependencyInitializationTimeout: 5000
 # Directory where all plugins reside
@@ -20,6 +18,20 @@ enabledFeatures:
   event: true
   rpc: true
   presence: true
+
+telemetry:
+  type: deepstreamIO
+  options:
+    # Disable telemetry entirely
+    enabled: false
+    # Prints whatever will be sent to the telemetry endpoint,
+    # without actually sending it
+    debug: false
+    # An anonymous uuid that allows us to know its one unique
+    # deployment. Please don't generate these randomly, it really
+    # skews up analytics. This is in the config and user generated
+    # because we don't want to
+    deploymentId: 4630395f-34cd-4b4a-a9b7-4e1388086805
 
 rpc:
   # Timeout for client RPC acknowledgement
@@ -183,10 +195,12 @@ connectionEndpoints:
 
 # Logger Configuration
 logger:
-  # use either the default logger, this does not currently support meta objects
+  # use the default logger, this does not currently support meta objects
   type: default
   options:
     colors: true
+    # Log messages with this level and above. Valid levels are DEBUG, INFO, WARN, ERROR, OFF
+    logLevel: INFO
 
   # log using json, this supports meta objects
   # name: pino
@@ -292,22 +306,8 @@ permission:
 monitoring:
   type: none
 
-telemetry:
-  type: deepstreamIO
-  options:
-    # Disable telemetry entirely
-    enabled: false
-    # Prints whatever will be sent to the telemetry endpoint,
-    # without actually sending it
-    debug: false
-    # An anonymous uuid that allows us to know its one unique
-    # deployment. Please don't generate these randomly, it really
-    # skews up analytics. This is in the config and user generated 
-    # because we don't want to 
-    deploymentId: 4630395f-34cd-4b4a-a9b7-4e1388086805
-  
-# # Allows monitoring stats to be requested via HTTP, useful for polling agents
-  # # such as LogStach
+  # # Allows monitoring stats to be requested via HTTP, useful for polling agents
+  # # such as LogStash
   # type: http
   # options:
   #   url: /monitoring
@@ -332,21 +332,21 @@ telemetry:
 #   custom:
 #     path: '...'
 
-# heap-snapshot:
-#   name: 'heap-snapshot'
-#   options:
-#     interval: 60000
-#     outputDir: file(../heap-snapshots)
+#   heap-snapshot:
+#     name: 'heap-snapshot'
+#     options:
+#       interval: 60000
+#       outputDir: file(../heap-snapshots)
 
-# aws:
-#   name: aws
-#   options:
-#     accessKeyId: ${AWS_ACCESS_KEY}
-#     secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
-#     services:
-#       - type: s3-sync
-#         options:
-#           syncInterval: 60000
-#           syncDir: file(../heap-snapshots)
-#           bucketName: ${SYNC_BUCKET_NAME}
-#           bucketRegion: ${AWS_DEFAULT_REGION}
+#   aws:
+#     name: aws
+#     options:
+#       accessKeyId: ${AWS_ACCESS_KEY}
+#       secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
+#       services:
+#         - type: s3-sync
+#           options:
+#             syncInterval: 60000
+#             syncDir: file(../heap-snapshots)
+#             bucketName: ${SYNC_BUCKET_NAME}
+#             bucketRegion: ${AWS_DEFAULT_REGION}
