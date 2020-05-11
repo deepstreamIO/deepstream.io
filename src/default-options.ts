@@ -128,6 +128,13 @@ export function get (): DeepstreamConfig {
       options: {}
     },
 
+    telemetry: {
+      type: 'deepstreamIO',
+      options: {
+        enabled: true,
+      }
+    },
+
     locks: {
       type: 'default',
       options: {
@@ -196,7 +203,7 @@ export function get (): DeepstreamConfig {
       event: true,
       rpc: true,
       presence: true,
-      monitoring: true
+      monitoring: false
     },
   }
 

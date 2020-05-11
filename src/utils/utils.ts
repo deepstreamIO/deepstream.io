@@ -190,3 +190,8 @@ export const validateHashingAlgorithm = (hash: string): void => {
     throw new Error(`Unknown Hash ${hash}`)
   }
 }
+
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+export const validateUUID = (uuid: string): boolean => {
+  return uuidPattern.test(uuid.toLowerCase())
+}

@@ -1,0 +1,89 @@
+import { DeepstreamTelemetry, DeepstreamPlugin, DeepstreamServices, EVENT, DeepstreamConfig } from '@deepstream/types'
+import { getDSInfo } from '../../config/ds-info'
+import { v4 as uuid } from 'uuid'
+import { validateUUID } from '../../utils/utils'
+import { Dictionary } from 'ts-essentials'
+import { post } from 'needle'
+
+const TELEMETRY_URL = process.env.TELEMETRY_URL || 'https://deepstream.io/api/v1/telemetry'
+
+export interface DeepstreamIOTelemetryOptions {
+    enabled: boolean
+    debug: boolean
+    deploymentId: string
+}
+
+export class DeepstreamIOTelemetry extends DeepstreamPlugin implements DeepstreamTelemetry {
+    public description = 'Deepstream Telemetry'
+    private logger = this.services.logger.getNameSpace('TELEMETRY')
+
+    constructor (private pluginOptions: DeepstreamIOTelemetryOptions, private services: DeepstreamServices, private config: DeepstreamConfig) {
+        super()
+    }
+
+    public init () {
+        if (this.pluginOptions.enabled === false) {
+            this.logger.info(
+                EVENT.INFO,
+                'Telemetry disabled, please enable in order to support development of this project. Further info found at https://deepstream.io/blog/20200512-5.1-telemetry/'
+            )
+        }
+        if (this.pluginOptions.deploymentId === undefined || !validateUUID(this.pluginOptions.deploymentId)) {
+            this.logger.fatal(
+                EVENT.ERROR,
+                `Invalid deployment id, must be uuid format. Feel free to use this one "${uuid()}"`
+            )
+        }
+    }
+
+    public async whenReady (): Promise<void> {
+        if (this.pluginOptions.enabled === false) {
+            return
+        }
+        const info = getDSInfo()
+        const enabledFeatures = this.config.enabledFeatures
+        const config: any = this.config
+        const services = Object.keys(this.config).reduce((result, key) => {
+            if (!config[key]) {
+                return result
+            }
+            if (config[key].type) {
+                result[key] = config[key].type
+            } else if (config[key].name) {
+                result[key] = {
+                    name: config[key].name
+                }
+            } else if (config[key].path) {
+                result[key] = 'custom'
+            }
+            return result
+        }, {} as Dictionary<any>)
+
+        const analytics = {
+            ...info,
+            enabledFeatures,
+            services
+        }
+
+        if (this.pluginOptions.debug) {
+            this.logger.info(EVENT.TELEMETRY_DEBUG, `We would have sent the following: ${JSON.stringify(analytics)}`)
+        } else {
+            this.sendReport(analytics)
+        }
+    }
+
+    public async close (): Promise<void> {
+    }
+
+    private sendReport (data: any): void {
+        post(TELEMETRY_URL, data, {}, (error: any) => {
+          if (error) {
+            if (error.code === 'ECONNREFUSED') {
+                this.logger.warn(EVENT.TELEMETRY_UNREACHABLE, "Can't reach telemetry endpoint")
+            } else {
+                this.logger.error(EVENT.ERROR, `Telemetry error: ${error.name}`)
+            }
+          }
+        })
+    }
+}

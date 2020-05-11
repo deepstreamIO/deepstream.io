@@ -1,9 +1,6 @@
-import * as fs from 'fs'
-import * as path from 'path'
-import * as os from 'os'
-import * as glob from 'glob'
 import * as jsYamlLoader from '../src/config/js-yaml-loader'
 import * as commander from 'commander'
+import { getDSInfo } from '../src/config/ds-info'
 
 // work-around for:
 // TS4023: Exported variable 'command' has or is using name 'local.Command'
@@ -35,32 +32,6 @@ async function printMeta (this: any) {
     }
   }
 
-  let meta
-  let pkg
-  try {
-    meta = require('../meta.json')
-  } catch (err) {
-    // if deepstream is not installed as binary (source or npm)
-    pkg = require('../package.json')
-    meta = {
-      deepstreamVersion: pkg.version,
-      ref: pkg.gitHead || pkg._resolved || 'N/A',
-      buildTime: 'N/A'
-    }
-  }
-  meta.platform = os.platform()
-  meta.arch = os.arch()
-  meta.nodeVersion = process.version
-  fetchLibs(this.libDir, meta)
-  console.log(JSON.stringify(meta, null, 2))
-}
-
-function fetchLibs (libDir: string, meta: any) {
-  const directory = libDir || 'lib'
-  const files = glob.sync(path.join(directory, '*', 'package.json'))
-  meta.libs = files.map((filePath) => {
-    const pkg = fs.readFileSync(filePath, 'utf8')
-    const object = JSON.parse(pkg)
-    return `${object.name}:${object.version}`
-  })
+  const dsInfo = await getDSInfo(this.libDir)
+  console.log(JSON.stringify(dsInfo, null, 2))
 }

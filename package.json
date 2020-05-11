@@ -41,7 +41,7 @@
     "url": "https://github.com/deepstreamIO/deepstream.io.git"
   },
   "dependencies": {
-    "@deepstream/protobuf": "^1.0.1",
+    "@deepstream/protobuf": "^1.0.3",
     "@deepstream/types": "^2.1.0",
     "ajv": "^6.12.2",
     "better-ajv-errors": "^0.6.7",
@@ -59,7 +59,7 @@
     "source-map-support": "^0.5.19",
     "uWebSockets.js": "github:uNetworking/uWebSockets.js#v17.4.0",
     "uuid": "^8.0.0",
-    "ws": "^7.2.5"
+    "ws": "^7.3.0"
   },
   "devDependencies": {
     "@deepstream/client": "^5.0.8",

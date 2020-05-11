@@ -7,7 +7,7 @@ import { createServer as createTLSServer, Server as TLSServer } from 'tls'
 // @ts-ignore
 import * as mqttCon from 'mqtt-connection'
 import { TOPIC, CONNECTION_ACTION, AUTH_ACTION } from '../../constants'
-import { Message } from '@deepstream/client/dist/constants'
+import { Message } from '@deepstream/client/dist/src/constants'
 import { EventEmitter } from 'events'
 
 export interface MQTTConnectionEndpointConfig extends WebSocketServerConfig {

@@ -24,6 +24,7 @@ import { NoopStorage } from '../services/storage/noop-storage'
 import { LocalCache } from '../services/cache/local-cache'
 import { StdOutLogger } from '../services/logger/std/std-out-logger'
 import { PinoLogger } from '../services/logger/pino/pino-logger'
+import { DeepstreamIOTelemetry } from '../services/telemetry/deepstreamio-telemetry'
 
 import { NoopMonitoring } from '../services/monitoring/noop-monitoring'
 import { DistributedLockRegistry } from '../services/lock/distributed-lock-registry'
@@ -134,7 +135,7 @@ export const initialize = function (deepstream: Deepstream, config: DeepstreamCo
   services.clusterRegistry = new (resolvePluginClass(config.clusterRegistry, 'clusterRegistry', services.logger))(config.clusterRegistry.options, services, config)
   services.clusterStates = new (resolvePluginClass(config.clusterStates, 'clusterStates', services.logger))(config.clusterStates.options, services, config)
   services.httpService = handleHTTPServer(config, services)
-
+  services.telemetry = handleTelemetry(config, services)
   handleCustomPlugins(config, services)
 
   return { config, services }
@@ -469,4 +470,22 @@ function handleHTTPServer (config: DeepstreamConfig, services: DeepstreamService
   }
 
   return new HttpServerClass(config.httpServer.options, services, config)
+}
+
+function handleTelemetry (config: DeepstreamConfig, services: DeepstreamServices): DeepstreamMonitoring {
+  let TelemetryPlugin
+
+  const telemetryPlugins = {
+    deepstreamIO: DeepstreamIOTelemetry
+  }
+
+  if (config.telemetry.name || config.telemetry.path) {
+    return new (resolvePluginClass(config.telemetry, 'telemetry', services.logger))(config.telemetry.options, services, config)
+  } else if (config.telemetry.type && (telemetryPlugins as any)[config.telemetry.type]) {
+    TelemetryPlugin = (telemetryPlugins as any)[config.telemetry.type]
+  } else {
+    throw new Error(`Unknown telemetry type ${config.telemetry.type}`)
+  }
+
+  return new TelemetryPlugin(config.telemetry.options, services, config)
 }

@@ -12,6 +12,15 @@ dependencyInitializationTimeout: 5000
 # Exit the process a fatal error occurs, like losing a cache connection
 exitOnFatalError: false
 
+# This disables specific feature in DS, which is a more performant way
+# than disabling via permissions and is also how telemetry figures out
+# what features are enabled
+enabledFeatures:
+  record: true
+  event: true
+  rpc: true
+  presence: true
+
 rpc:
   # Timeout for client RPC acknowledgement
   ackTimeout: 1000
@@ -37,7 +46,7 @@ record:
   # Invalid configuration: data should NOT have additional properties
 listen:
   # Try finding a provider randomly rather than by the order they subscribed to.
-  shuffleProviderss: true
+  shuffleProviders: true
   # The amount of time to wait for a provider to acknowledge or reject a listen request
   responseTimeout: 500
   # The amount of time before trying to reattempt finding matches for subscriptions. This
@@ -283,7 +292,21 @@ permission:
 monitoring:
   type: none
 
-  # # Allows monitoring stats to be requested via HTTP, useful for polling agents
+telemetry:
+  type: deepstreamIO
+  options:
+    # Disable telemetry entirely
+    enabled: false
+    # Prints whatever will be sent to the telemetry endpoint,
+    # without actually sending it
+    debug: false
+    # An anonymous uuid that allows us to know its one unique
+    # deployment. Please don't generate these randomly, it really
+    # skews up analytics. This is in the config and user generated 
+    # because we don't want to 
+    deploymentId: 4630395f-34cd-4b4a-a9b7-4e1388086805
+  
+# # Allows monitoring stats to be requested via HTTP, useful for polling agents
   # # such as LogStach
   # type: http
   # options:

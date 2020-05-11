@@ -105,6 +105,14 @@ const storageOptions = getPluginOptions(
   }
 )
 
+const telemetryOptions = getPluginOptions(
+  'telemetry',
+  ['deepstreamIO'],
+  {
+    enabled: { type: 'boolean' }
+  }
+)
+
 const authenticationOptions = {
   auth: {
     type: 'array',
@@ -262,6 +270,7 @@ const schema = {
     ...permissionOptions,
     ...subscriptionsOptions,
     ...monitoringOptions,
+    ...telemetryOptions,
     ...locksOptions,
     ...clusterNodeOptions,
     ...clusterRegistryOptions,

@@ -56,6 +56,10 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Deepstre
   public async close () {
   }
 
+  public getClientVersions () {
+    return {}
+  }
+
   /**
    * Initialize the http server.
    */

@@ -2,7 +2,7 @@
 
 import * as sinon from 'sinon'
 import { clientHandler, E2EClient } from './client-handler'
-import { RPCResponse } from '@deepstream/client/dist/rpc/rpc-response'
+import { RPCResponse } from '@deepstream/client/dist/src/rpc/rpc-response'
 
 let rejected = false
 

@@ -403,11 +403,21 @@ private async pluginsShutdown () {
   }
 
   private async handlerShutdown () {
-    await this.eventHandler.close()
-    await this.rpcHandler.close()
-    await this.recordHandler.close()
-    await this.presenceHandler.close()
-    await this.monitoringHandler.close()
+    if (this.config.enabledFeatures.event) {
+      await this.eventHandler.close()
+    }
+    if (this.config.enabledFeatures.rpc) {
+      await this.rpcHandler.close()
+    }
+    if (this.config.enabledFeatures.record) {
+      await this.recordHandler.close()
+    }
+    if (this.config.enabledFeatures.presence) {
+      await this.presenceHandler.close()
+    }
+    if (this.config.enabledFeatures.monitoring) {
+      await this.monitoringHandler.close()
+    }
     this.transition('handlers-closed')
   }
 
