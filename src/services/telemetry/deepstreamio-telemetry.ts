@@ -5,7 +5,7 @@ import { validateUUID } from '../../utils/utils'
 import { Dictionary } from 'ts-essentials'
 import { post } from 'needle'
 
-const TELEMETRY_URL = process.env.TELEMETRY_URL || 'https://deepstream.io/api/v1/telemetry'
+const TELEMETRY_URL = process.env.TELEMETRY_URL || 'http://telemetry.deepstream.io:8080/api/v1/startup'
 
 export interface DeepstreamIOTelemetryOptions {
     enabled: boolean
@@ -60,6 +60,7 @@ export class DeepstreamIOTelemetry extends DeepstreamPlugin implements Deepstrea
         }, {} as Dictionary<any>)
 
         const analytics = {
+            deploymentId: this.pluginOptions.deploymentId,
             ...info,
             enabledFeatures,
             services
@@ -76,12 +77,13 @@ export class DeepstreamIOTelemetry extends DeepstreamPlugin implements Deepstrea
     }
 
     private sendReport (data: any): void {
-        post(TELEMETRY_URL, data, {}, (error: any) => {
+        post(TELEMETRY_URL, data, { content_type: 'application/json' }, (error: any) => {
           if (error) {
             if (error.code === 'ECONNREFUSED') {
                 this.logger.warn(EVENT.TELEMETRY_UNREACHABLE, "Can't reach telemetry endpoint")
             } else {
-                this.logger.error(EVENT.ERROR, `Telemetry error: ${error.name}`)
+                console.log(error)
+                this.logger.error(EVENT.ERROR, `Telemetry error: ${error}`)
             }
           }
         })

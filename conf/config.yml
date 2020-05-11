@@ -23,7 +23,7 @@ telemetry:
   type: deepstreamIO
   options:
     # Disable telemetry entirely
-    enabled: false
+    enabled: true
     # Prints whatever will be sent to the telemetry endpoint,
     # without actually sending it
     debug: false
