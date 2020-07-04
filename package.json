@@ -25,7 +25,7 @@
     "lint": "tslint --project .",
     "lint:fix": "npm run lint -- --fix",
     "test": "mocha 'src/**/*.spec.ts'",
-    "test:coverage": "nyc mocha --opts src/test/mocha.opts 'src/**/*.spec.ts' && npm run test:coverage:combine",
+    "test:coverage": "nyc mocha 'src/**/*.spec.ts' && npm run test:coverage:combine",
     "test:http-server": "node test/test-helper/start-test-server.js",
     "e2e": "ts-node --transpile-only --project tsconfig.json --files ./node_modules/.bin/cucumber-js test-e2e --require './test-e2e/steps/**/*.ts' --exit",
     "e2e:v3": "V3=true npm run e2e -- --tags \"not @V4\"",
