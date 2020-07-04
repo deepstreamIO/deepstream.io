@@ -104,7 +104,7 @@ function parseFile<ConfigType = DeepstreamConfig> (filePath: string, fileContent
   const extension = path.extname(filePath)
 
   if (extension === '.yml' || extension === '.yaml') {
-    return yaml.safeLoad(replaceEnvironmentVariables(fileContent))
+    return yaml.safeLoad(replaceEnvironmentVariables(fileContent)) as unknown as ConfigType
   } else if (extension === '.js') {
     return require(path.resolve(filePath))
   } else if (extension === '.json') {
