@@ -4,6 +4,10 @@
 
 - Use upgrade property for uWebSockets http server.
 
+### Misc
+
+- Do not run e2e:v3 test on the pre-push hook
+
 ## [5.1.2] - 2020.07.05
 
 ### Misc
