@@ -1,3 +1,9 @@
+## [5.1.3] - 2020.08.08
+
+### Fix
+
+- Use upgrade property for uWebSockets http server.
+
 ## [5.1.2] - 2020.07.05
 
 ### Misc
@@ -60,7 +66,7 @@ Fixes by the awesome @jaime-ez around heartbeats and ping messages!
 
   - heap-snapshot
     This allows deepstream to save its heap space for analysis by v8 tools
-    
+
     ```yaml
     plugins:
       heap-snapshot:
