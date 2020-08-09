@@ -181,11 +181,21 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
       compression: 0,
       maxPayloadLength: webSocketConnectionEndpoint.wsOptions.maxMessageSize,
       idleTimeout: webSocketConnectionEndpoint.wsOptions.heartBeatInterval * 2,
-      open: (websocket: uws.WebSocket, request: uws.HttpRequest) => {
+      upgrade: (response: uws.HttpResponse, request: uws.HttpRequest, context: uws.us_socket_context_t) => {
+          /* This immediately calls open handler, you must not use response after this call */
+          response.upgrade({
+              url: request.getUrl(),
+              headers: this.getHeaders(request),
+              referer: request.getHeader('referer')
+          },
+          /* Spell these correctly */
+          request.getHeader('sec-websocket-key'), request.getHeader('sec-websocket-protocol'), request.getHeader('sec-websocket-extensions'), context)
+      },
+      open: (websocket: uws.WebSocket) => {
         const handshakeData = {
           remoteAddress: new Uint8Array(websocket.getRemoteAddress()).join('.'),
-          headers: this.getHeaders(request),
-          referer: request.getHeader('referer')
+          headers: websocket.headers,
+          referer: websocket.referer
         }
         const socketWrapper = createSocketWrapper(websocket, handshakeData, this.services, webSocketConnectionEndpoint.wsOptions, webSocketConnectionEndpoint)
         this.connections.set(websocket, socketWrapper)
