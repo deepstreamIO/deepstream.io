@@ -20,7 +20,7 @@ remote procedure calls allow for secure and highly available request response co
 
 ### Getting Started:
 
-1. [Installing deepstream](https://deepstream.io/install/)
+1. [Installing deepstream](https://deepstream.io/tutorials/install/linux/)
 2. [Quickstart](https://deepstream.io/tutorials/getting-started/javascript/)
 3. [Tutorials](https://deepstream.io/tutorials/)
 4. [Documentation](https://deepstream.io/docs/)
