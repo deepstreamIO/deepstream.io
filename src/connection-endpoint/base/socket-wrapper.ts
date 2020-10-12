@@ -89,7 +89,7 @@ export abstract class WSSocketWrapper<SerializedType extends { length: number }>
 
   public close (): void {
     this.isClosed = true
-    delete this.authCallback
+    this.authCallback = null
 
     this.closeCallbacks.forEach((cb) => cb(this))
     this.services.logger.info(EVENT.CLIENT_DISCONNECTED, this.userId!)

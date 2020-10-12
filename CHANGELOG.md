@@ -1,3 +1,9 @@
+## [5.1.2] - 2020.xx.xx
+
+### Misc  
+
+- Updating dependencies
+
 ## [5.1.3] - 2020.08.08
 
 ### Fix

@@ -181,7 +181,7 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
       compression: 0,
       maxPayloadLength: webSocketConnectionEndpoint.wsOptions.maxMessageSize,
       idleTimeout: webSocketConnectionEndpoint.wsOptions.heartBeatInterval * 2,
-      upgrade: (response: uws.HttpResponse, request: uws.HttpRequest, context: uws.us_socket_context_t) => {
+      upgrade: (response: uws.HttpResponse, request: uws.HttpRequest, context: any) => {
           /* This immediately calls open handler, you must not use response after this call */
           response.upgrade({
               url: request.getUrl(),
@@ -214,7 +214,7 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
         webSocketConnectionEndpoint.onSocketClose.call(webSocketConnectionEndpoint, this.connections.get(ws)!)
         this.connections.delete(ws)
       }
-    })
+    } as any)
   }
 
   private terminateResponse (response: uws.HttpResponse, code: number, message?: string) {

@@ -293,7 +293,7 @@ export default class BaseWebsocketConnectionEndpoint extends DeepstreamPlugin im
   private registerAuthenticatedSocket (unauthenticatedSocketWrapper: UnauthenticatedSocketWrapper, userData: any): void {
     const socketWrapper = this.appendDataToSocketWrapper(unauthenticatedSocketWrapper, userData)
 
-    delete unauthenticatedSocketWrapper.authCallback
+    unauthenticatedSocketWrapper.authCallback = null
     unauthenticatedSocketWrapper.onMessage = (parsedMessages: Message[]) => {
       this.onMessages(socketWrapper, parsedMessages)
     }
