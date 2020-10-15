@@ -218,11 +218,8 @@ export const getMessage = (message: Message, isAck: boolean = false): string => 
   }
   
   const builder = BUILDERS[message.topic][message.action]
-  if (!builder) {
-    console.trace('missing builder for', message)
-    return ''
-  } else {
-    if (
+  
+  if (
       !message.parsedData && !message.data &&
       (
         (message.topic === TOPIC.RPC.BYTE && (message.action === PA.RESPONSE.BYTE || message.action === PA.REQUEST.BYTE)) ||
@@ -240,8 +237,7 @@ export const getMessage = (message: Message, isAck: boolean = false): string => 
       message.data = typed(JSON.parse(message.data.toString()))
     }
 
-    return builder(message, isAck)
-  }
+    return builder(message, isAck)  
 }
 
 /**
