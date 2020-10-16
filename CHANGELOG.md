@@ -4,6 +4,12 @@
 
 - Updating dependencies
 
+## [5.1.4] - 2020.10.16
+
+### Fix
+
+- Fixed bug causing the server to crash with older sdks.
+
 ## [5.1.3] - 2020.08.08
 
 ### Fix
