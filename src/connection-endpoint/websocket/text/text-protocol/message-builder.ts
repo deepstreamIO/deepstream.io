@@ -216,9 +216,9 @@ export const getMessage = (message: Message, isAck: boolean = false): string => 
     console.trace('missing builder for', message, isAck)
     return ''
   }
-  
+
   const builder = BUILDERS[message.topic][message.action]
-  
+
   if (
       !message.parsedData && !message.data &&
       (
@@ -237,7 +237,7 @@ export const getMessage = (message: Message, isAck: boolean = false): string => 
       message.data = typed(JSON.parse(message.data.toString()))
     }
 
-    return builder(message, isAck)  
+    return builder(message, isAck)
 }
 
 /**
