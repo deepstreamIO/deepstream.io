@@ -29,7 +29,7 @@ telemetry:
     debug: false
     # An anonymous uuid that allows us to know its one unique
     # deployment. Please don't generate these randomly if using
-    # node, it really skews up analytics. 
+    # node, it really skews up analytics.
     # deploymentId: <uuid goes here>
 
 rpc:
@@ -259,6 +259,8 @@ auth:
   #     iterations: 100
   #     # the length of the resulting key
   #     # keyLength: 32
+  #     # fail authentication process if invalid login parameters are used
+  #     # reportInvalidParameters: true
 
   # - type: file
   #   options:
@@ -270,6 +272,8 @@ auth:
   #     iterations: 100
   #     # the length of the resulting key
   #     keyLength: 32
+  #     # fail authentication process if invalid login parameters are used
+  #     # reportInvalidParameters: true
 
   # # getting permissions from a http webhook
   # - type: http
@@ -290,6 +294,8 @@ auth:
   #     retryAttempts: 3
   #     # the time in milliseconds between retries
   #     retryInterval: 5000
+  #     # fail authentication process if invalid login parameters are used
+  #     # reportInvalidParameters: true
 
 # Permissioning
 permission:

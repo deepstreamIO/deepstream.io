@@ -9,7 +9,7 @@ interface FileAuthConfig {
   iterations: number
   // the length of the resulting key
   keyLength: number,
-  // if this is the only authentication mechanism, fail if invalid login parameters are used
+  // fail authentication process if invalid login parameters are used
   reportInvalidParameters: boolean
 }
 
@@ -34,6 +34,9 @@ export class FileBasedAuthentication extends DeepstreamPlugin implements Deepstr
     super()
     this.validateSettings(settings)
     this.base64KeyLength = 4 * Math.ceil(this.settings.keyLength / 3)
+    if (this.settings.reportInvalidParameters === undefined) {
+      this.settings.reportInvalidParameters = true
+    }
   }
 
   public async whenReady (): Promise<void> {
@@ -79,8 +82,10 @@ export class FileBasedAuthentication extends DeepstreamPlugin implements Deepstr
         clientData: typeof userData.clientData === 'undefined' ? null : userData.clientData,
       }
     }
-
-    return { isValid: false }
+    if (this.settings.reportInvalidParameters) {
+      return { isValid: false }
+    }
+    return null
   }
 
   /**
