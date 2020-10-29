@@ -1,4 +1,8 @@
-## [5.1.2] - 2020.xx.xx
+## [5.1.5] - 2020.10.29
+
+### Fix
+
+- Fix #1089 install service gives error
 
 ### Misc  
 
