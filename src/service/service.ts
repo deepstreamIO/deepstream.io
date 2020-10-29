@@ -66,7 +66,7 @@ async function setupSystemD (name: string, options: any, callback: Function) {
   console.log(`Installing service on: ${filepath}`)
 
   const exists = existsSync(filepath)
-  if (!exists) {
+  if (exists) {
     callback('Service already exists, please uninstall first')
     return
   }
@@ -125,7 +125,7 @@ async function setupSystemV (name: string, options: any, callback: Function) {
   console.log(`Installing service on: ${filepath}`)
 
   const exists = existsSync(filepath)
-  if (!exists) {
+  if (exists) {
     callback('Service already exists, please uninstall first')
     return
   }
