@@ -131,14 +131,24 @@ export class NodeHTTP extends DeepstreamPlugin implements DeepstreamHTTPService 
       })
 
       const socketWrapper = createSocketWrapper(websocket, handshakeData, this.services, webSocketConnectionEndpoint.wsOptions, webSocketConnectionEndpoint)
+      socketWrapper.lastMessageRecievedAt = Date.now()
       this.connections.set(websocket, socketWrapper)
 
+      const interval = setInterval(() => {
+        if ((Date.now() - socketWrapper.lastMessageRecievedAt) > webSocketConnectionEndpoint.wsOptions.heartbeatInterval * 2) {
+          console.log('heartbeat issues')
+          socketWrapper.close()
+        }
+      }, webSocketConnectionEndpoint.wsOptions.heartbeatInterval)
+
       websocket.on('close', () => {
+        clearInterval(interval)
         webSocketConnectionEndpoint.onSocketClose.call(webSocketConnectionEndpoint, socketWrapper)
         this.connections.delete(websocket)
       })
 
       websocket.on('message', (msg: string) => {
+        socketWrapper.lastMessageRecievedAt = Date.now()
         const messages = socketWrapper.parseMessage(msg)
         if (messages.length > 0) {
           socketWrapper.onMessage(messages)

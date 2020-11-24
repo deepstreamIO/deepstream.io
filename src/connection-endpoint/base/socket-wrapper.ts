@@ -9,6 +9,7 @@ export abstract class WSSocketWrapper<SerializedType extends { length: number }>
   public uuid: number = Math.random()
   public authCallback: Function | null = null
   public authAttempts: number = 0
+  public lastMessageRecievedAt: number = 0
 
   private bufferedWrites: SerializedType[] = []
   private closeCallbacks: Set<Function> = new Set()
