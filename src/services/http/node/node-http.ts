@@ -136,8 +136,8 @@ export class NodeHTTP extends DeepstreamPlugin implements DeepstreamHTTPService 
 
       const interval = setInterval(() => {
         if ((Date.now() - socketWrapper.lastMessageRecievedAt) > webSocketConnectionEndpoint.wsOptions.heartbeatInterval * 2) {
-          console.log('heartbeat issues')
-          socketWrapper.close()
+          this.services.logger.error(EVENT.INFO, 'Heartbeat missing on websocket, terminating connection')
+          socketWrapper.destroy()
         }
       }, webSocketConnectionEndpoint.wsOptions.heartbeatInterval)
 
