@@ -1,3 +1,9 @@
+## [5.1.7] - 2020.11.25
+
+### Fix
+
+- Calling destroy on socketWrapper instead of close, since close is a reaction and destroy an action
+
 ## [5.1.6] - 2020.11.24
 
 ### Fix
