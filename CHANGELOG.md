@@ -1,3 +1,14 @@
+## [5.1.8] - 2020.11.25
+
+### Misc
+
+- Updating uws to support apple silicon
+
+### Fix
+
+- Increasing CI heartbeat timeouts
+
+
 ## [5.1.7] - 2020.11.25
 
 ### Fix
