@@ -40,7 +40,7 @@ export const getServerConfig = (port: number): PartialDeepstreamConfig => ({
           urlPath: '/e2e-v4',
           maxAuthAttempts              : 2,
           unauthenticatedClientTimeout : 200,
-          heartbeatInterval: 1000
+          heartbeatInterval: 10000
         } as any
       },
       {
@@ -49,7 +49,7 @@ export const getServerConfig = (port: number): PartialDeepstreamConfig => ({
           urlPath: '/e2e-v3',
           maxAuthAttempts              : 2,
           unauthenticatedClientTimeout : 200,
-          heartbeatInterval: 1000
+          heartbeatInterval: 10000
         } as any
       },
       {
