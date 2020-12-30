@@ -187,7 +187,7 @@ export default class RecordHandler extends Handler<RecordMessage> {
       }
 
       try {
-        await new Promise((resolve, reject) => this.services.cache.deleteBulk(message.names!, (error) => {
+        await new Promise<void>((resolve, reject) => this.services.cache.deleteBulk(message.names!, (error) => {
           error ? reject(error) : resolve()
         }))
       } catch (error) {

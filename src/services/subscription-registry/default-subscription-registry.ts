@@ -251,6 +251,10 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
           const msg = `${socket.userId} is not subscribed to ${name}`
           this.logger.warn(this.actions[this.constants.NOT_SUBSCRIBED], msg, { socketWrapper: socket, message})
         }
+        if (STATE_REGISTRY_TOPIC[this.topic]) {
+          // This isn't supported for STATE_REGISTRY_TOPIC/s
+          return
+        }
         socket.sendMessage({
           topic: this.topic,
           action: this.constants.NOT_SUBSCRIBED,

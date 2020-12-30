@@ -213,14 +213,13 @@ const BUILDERS = {
  */
 export const getMessage = (message: Message, isAck: boolean = false): string => {
   if (!BUILDERS[message.topic] || !BUILDERS[message.topic][message.action]) {
-    console.log(message, isAck)
-  }
-  const builder = BUILDERS[message.topic][message.action]
-  if (!builder) {
-    console.trace('missing builder for', message)
+    console.trace('missing builder for', message, isAck)
     return ''
-  } else {
-    if (
+  }
+
+  const builder = BUILDERS[message.topic][message.action]
+
+  if (
       !message.parsedData && !message.data &&
       (
         (message.topic === TOPIC.RPC.BYTE && (message.action === PA.RESPONSE.BYTE || message.action === PA.REQUEST.BYTE)) ||
@@ -239,7 +238,6 @@ export const getMessage = (message: Message, isAck: boolean = false): string => 
     }
 
     return builder(message, isAck)
-  }
 }
 
 /**

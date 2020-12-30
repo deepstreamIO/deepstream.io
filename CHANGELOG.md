@@ -1,8 +1,35 @@
-## [5.1.2] - 2020.xx.xx
+## [5.1.7] - 2020.11.25
+
+### Fix
+
+- Calling destroy on socketWrapper instead of close, since close is a reaction and destroy an action
+
+## [5.1.6] - 2020.11.24
+
+### Fix
+
+- Fix #1091 heartbeat not working with node-http/ws
+
+This fix now adds a timestamps to every message frame recieved and sets up an interval
+per socket to check heartbeat exists. Didn't do any performance tests but I'm assuming having a single interval is cheaper than setting a timeout and canceling on each message.
+
+This fix also exposes that we don't serialize STATE_TOPIC_REGISTRY/NOT_SUBSCRIBED message correctly which throws an error and crashes the server. That fix will require more elbow grease and hasn't been reported so will just keep an eye on issues.
+
+## [5.1.5] - 2020.10.29
+
+### Fix
+
+- Fix #1089 install service gives error
 
 ### Misc  
 
 - Updating dependencies
+
+## [5.1.4] - 2020.10.16
+
+### Fix
+
+- Fixed bug causing the server to crash with older sdks.
 
 ## [5.1.3] - 2020.08.08
 

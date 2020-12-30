@@ -27,6 +27,7 @@ compiler:
 
 node_js:
   - "12"
+  - "14"
 
 env:
   - DEFAULT_DELAY: 50

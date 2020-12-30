@@ -78,7 +78,7 @@ export class E2EHarness extends EventEmitter {
   }
 
   public stopServer (serverId: number) {
-    return new Promise(async (resolve) => {
+    return new Promise<void>(async (resolve) => {
       const server = this.servers[serverId - 1]
       if (!server) {
         throw new Error(`Server ${serverId} not found`)
