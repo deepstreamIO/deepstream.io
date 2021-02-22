@@ -108,3 +108,12 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         asset_paths: '["build/*/*.pkg"]'
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v1
+      with:
+        node-version: '12.x'
+    - run: DOCKER_PASSWORD=${{ secrets.DOCKERHUB_TOKEN }} DOCKER_USERNAME=${{ secrets.DOCKERHUB_USERNAME }} bash scripts/docker.sh

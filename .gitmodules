@@ -3,34 +3,34 @@
 	url = https://github.com/deepstreamIO/deepstream.io-e2e.git
 [submodule "connectors/cache/redis"]
 	path = connectors/cache/redis
-	url = git@github.com:deepstreamIO/deepstream.io-cache-redis.git
+	url = https://github.com/deepstreamIO/deepstream.io-cache-redis.git
 [submodule "connectors/cache/memcached"]
 	path = connectors/cache/memcached
-	url = git@github.com:deepstreamIO/deepstream.io-cache-memcached.git
+	url = https://github.com/deepstreamIO/deepstream.io-cache-memcached.git
 [submodule "connectors/cache/hazelcast"]
 	path = connectors/cache/hazelcast
-	url = git@github.com:deepstreamIO/deepstream.io-cache-hazelcast.git
+	url = https://github.com/deepstreamIO/deepstream.io-cache-hazelcast.git
 [submodule "connectors/storage/postgres"]
 	path = connectors/storage/postgres
-	url = git@github.com:deepstreamIO/deepstream.io-storage-postgres.git
+	url = https://github.com/deepstreamIO/deepstream.io-storage-postgres.git
 [submodule "connectors/storage/rethinkdb"]
 	path = connectors/storage/rethinkdb
-	url = git@github.com:deepstreamIO/deepstream.io-storage-rethinkdb.git
+	url = https://github.com/deepstreamIO/deepstream.io-storage-rethinkdb.git
 [submodule "connectors/storage/mongodb"]
 	path = connectors/storage/mongodb
-	url = git@github.com:deepstreamIO/deepstream.io-storage-mongodb.git
+	url = https://github.com/deepstreamIO/deepstream.io-storage-mongodb.git
 [submodule "connectors/storage/elasticsearch"]
 	path = connectors/storage/elasticsearch
-	url = git@github.com:deepstreamIO/deepstream.io-storage-elasticsearch.git
+	url = https://github.com/deepstreamIO/deepstream.io-storage-elasticsearch.git
 [submodule "client"]
 	path = client
-	url = git@github.com:deepstreamIO/deepstream.io-client-js.git
+	url = https://github.com/deepstreamIO/deepstream.io-client-js.git
 [submodule "connectors/clusterNode/redis"]
 	path = connectors/clusterNode/redis
-	url = git@github.com:deepstreamIO/deepstream.io-clusternode-redis.git
+	url = https://github.com/deepstreamIO/deepstream.io-clusternode-redis.git
 [submodule "connectors/logger/winston"]
 	path = connectors/logger/winston
-	url = git@github.com:deepstreamIO/deepstream.io-logger-winston.git
+	url = https://github.com/deepstreamIO/deepstream.io-logger-winston.git
 [submodule "plugins/aws"]
 	path = plugins/aws
-	url = git@github.com:deepstreamIO/deepstream.io-plugin-aws.git
+	url = https://github.com/deepstreamIO/deepstream.io-plugin-aws.git
