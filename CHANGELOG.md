@@ -1,3 +1,12 @@
+## [5.2.1] - 2021.02.24
+
+### Fixes
+
+- uws idleTimeout is in seconds! That's why it didn't closed the connection on time. 
+- buffer ack messages
+- remove noDelay from default-options and use it on subscription registry as a param to enable/disable buffering
+
+
 ## [5.2.0] - 2021.02.17
 
 ### Task
