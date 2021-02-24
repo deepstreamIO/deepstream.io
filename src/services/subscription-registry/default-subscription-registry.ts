@@ -132,8 +132,7 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
   /**
    * Enqueues a message string to be broadcast to all subscribers. Broadcasts will potentially
    * be reordered in relation to *other* subscription names, but never in relation to the same
-   * subscription name. Each broadcast is given 'broadcastTimeout' ms to coalesce into one big
-   * broadcast.
+   * subscription name.
    */
   public sendToSubscribers (name: string, message: Message, noDelay: boolean, senderSocket: SocketWrapper | null, suppressRemote: boolean = false): void {
     // If the senderSocket is null it means it was received via the message bus
@@ -160,11 +159,11 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
         if (message.parsedData) {
           delete message.data
         }
-        this.logger.debug('SEND_TO_SUBSCRIBERS', `encoding ${name} with a different protocol ${socket.socketType} with data ${message.parsedData}`)
+        this.logger.debug('SEND_TO_SUBSCRIBERS', `encoding ${name} with protocol ${socket.socketType} with data ${JSON.stringify(message)}`)
         serializedMessages[socket.socketType] = socket.getMessage(message)
       }
       this.logger.debug('SEND_TO_SUBSCRIBERS', `sending ${socket.socketType} payload of ${serializedMessages[socket.socketType]}`)
-      socket.sendBuiltMessage!(serializedMessages[socket.socketType], true)
+      socket.sendBuiltMessage!(serializedMessages[socket.socketType], !noDelay)
     }
   }
 
