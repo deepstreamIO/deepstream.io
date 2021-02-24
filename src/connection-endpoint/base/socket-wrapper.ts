@@ -65,7 +65,7 @@ export abstract class WSSocketWrapper<SerializedType extends { length: number }>
    */
   public sendAckMessage (message: Message, allowBuffering: boolean = true): void {
     this.services.monitoring.onMessageSend(message)
-    this.sendBuiltMessage(this.getAckMessage(message))
+    this.sendBuiltMessage(this.getAckMessage(message), allowBuffering)
   }
 
   public abstract getMessage (message: Message): SerializedType
