@@ -6,7 +6,6 @@ const WebSocketDefaultOptions = {
   heartbeatInterval: 30000,
   outgoingBufferTimeout: 0,
   maxBufferByteSize: 100000,
-  noDelay: true,
   headers: [],
 
   /*
