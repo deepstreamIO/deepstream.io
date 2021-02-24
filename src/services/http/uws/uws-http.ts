@@ -176,11 +176,14 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
   }
 
   public registerWebsocketEndpoint (path: string, createSocketWrapper: SocketWrapperFactory, webSocketConnectionEndpoint: WebSocketConnectionEndpoint) {
+    // uws idleTimeout is in seconds and has a ~5 seconds resolution
+    const idleTimeout = webSocketConnectionEndpoint.wsOptions.heartbeatInterval * 2 / 1000 > 6 ? webSocketConnectionEndpoint.wsOptions.heartbeatInterval * 2 / 1000 : 6
+
     this.server.ws(path, {
       /* Options */
       compression: 0,
       maxPayloadLength: webSocketConnectionEndpoint.wsOptions.maxMessageSize,
-      idleTimeout: webSocketConnectionEndpoint.wsOptions.heartBeatInterval * 2,
+      idleTimeout,
       upgrade: (response: uws.HttpResponse, request: uws.HttpRequest, context: any) => {
           /* This immediately calls open handler, you must not use response after this call */
           response.upgrade({
