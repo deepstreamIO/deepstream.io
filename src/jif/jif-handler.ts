@@ -155,7 +155,7 @@ function getJifToMsg () {
   JIF_TO_MSG.presence = {}
 
   JIF_TO_MSG.presence.query = (msg: JifInMessage) => (
-    msg.parsedData ? JIF_TO_MSG.presence.queryUsers(msg) : JIF_TO_MSG.presence.queryAll(msg)
+    msg.names ? JIF_TO_MSG.presence.queryUsers(msg) : JIF_TO_MSG.presence.queryAll(msg)
   )
 
   JIF_TO_MSG.presence.queryAll = () => ({
@@ -171,7 +171,7 @@ function getJifToMsg () {
     message: {
       topic: TOPIC.PRESENCE,
       action: PRESENCE_ACTION.QUERY,
-      data: msg.parsedData,
+      names: msg.names,
     },
   })
 

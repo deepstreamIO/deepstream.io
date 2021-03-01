@@ -230,6 +230,12 @@ export const jifSchema = {
             'query',
           ],
         },
+        names: {
+          type: ['array'],
+          items: {
+            type: 'string',
+          }
+        }
       },
       required: [
         'topic',

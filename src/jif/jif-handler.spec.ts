@@ -356,7 +356,24 @@ describe('JIF Handler', () => {
         expect(message.topic).to.equal(TOPIC.PRESENCE)
         expect(message.action).to.equal(PRESENCE_ACTION.QUERY_ALL)
       })
-    })
+
+      it('should handle a presence query for some users', () => {
+        const jif = {
+          topic: 'presence',
+          action: 'query',
+          names: ['one']
+        }
+        const result = jifHandler.fromJIF(jif)
+        const message = result.message
+
+        expect(result.success).to.equal(true)
+        expect(message).to.be.an('object')
+        expect(message.topic).to.equal(TOPIC.PRESENCE)
+        expect(message.action).to.equal(PRESENCE_ACTION.QUERY)
+        expect(message.names).to.deep.equal(['one'])
+      })
+  })
+
   })
 
   describe('toJIF', () => {
