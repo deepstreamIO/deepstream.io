@@ -1,3 +1,10 @@
+## [5.2.2] - 2021.03.01
+
+### Feature
+
+- enable querying for specific user presence on http endpoint
+
+
 ## [5.2.1] - 2021.02.24
 
 ### Fixes
