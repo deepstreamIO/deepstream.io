@@ -368,11 +368,19 @@ function handleAuthStrategy (auth: PluginConfig, config: DeepstreamConfig, servi
       throw new Error(`unable to resolve authentication handler ${auth.name || auth.path}`)
     }
   } else if (auth.type && (authStrategies as any)[auth.type]) {
+    if (auth.options && auth.options.path) {
+      const req = require
+      auth.options.users = req(fileUtils.lookupConfRequirePath(auth.options.path))
+    }
+
     AuthenticationHandlerClass = (authStrategies as any)[auth.type]
   } else {
     throw new Error(`Unknown authentication type ${auth.type}`)
   }
 
+  if (config.auth.length > 1) {
+    if (!auth.options.reportInvalidParameters) auth.options.reportInvalidParameters = false
+  }
   return new AuthenticationHandlerClass(auth.options, services, config)
 }
 
