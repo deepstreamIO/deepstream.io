@@ -18,12 +18,14 @@ interface HttpAuthenticationHandlerSettings {
   // the maximum amount of retries before returning a false login
   retryAttempts: number,
   // the time in milliseconds between retries
-  retryInterval: number
+  retryInterval: number,
+  // fail authentication process if invalid login parameters are used
+  reportInvalidParameters: boolean
 }
 
 export class HttpAuthentication extends DeepstreamPlugin implements DeepstreamAuthentication {
   public description: string = `http webhook to ${this.settings.endpointUrl}`
-  private retryAttempts = new Map<number, { connectionData: any, authData: any, callback: (result: DeepstreamAuthenticationResult) => void, attempts: number } >()
+  private retryAttempts = new Map<number, { connectionData: any, authData: any, callback: (result: DeepstreamAuthenticationResult | null) => void, attempts: number } >()
   private requestId = 0
 
   constructor (private settings: HttpAuthenticationHandlerSettings, private services: DeepstreamServices, config: DeepstreamConfig) {
@@ -32,15 +34,18 @@ export class HttpAuthentication extends DeepstreamPlugin implements DeepstreamAu
     if (this.settings.promoteToHeader === undefined) {
       this.settings.promoteToHeader = []
     }
+    if (this.settings.reportInvalidParameters === undefined) {
+      this.settings.reportInvalidParameters = true
+    }
   }
 
   public async isValidUser (connectionData: JSONObject, authData: JSONObject) {
-    return new Promise((resolve: (result: DeepstreamAuthenticationResult) => void) => {
+    return new Promise((resolve: (result: DeepstreamAuthenticationResult | null) => void) => {
       this.validate(this.requestId++, connectionData, authData, resolve)
     })
   }
 
-  private validate (id: number, connectionData: JSONObject, authData: JSONObject, callback: (result: DeepstreamAuthenticationResult) => void): void {
+  private validate (id: number, connectionData: JSONObject, authData: JSONObject, callback: (result: DeepstreamAuthenticationResult | null) => void): void {
     const options = {
       read_timeout: this.settings.requestTimeout,
       open_timeout: this.settings.requestTimeout,
@@ -72,7 +77,12 @@ export class HttpAuthentication extends DeepstreamPlugin implements DeepstreamAu
       if (!response.statusCode) {
         this.services.logger.warn(EVENT.AUTH_ERROR, 'http auth server error: missing status code!')
         this.retryAttempts.delete(id)
-        callback({ isValid: false })
+        if (this.settings.reportInvalidParameters) {
+          callback({ isValid: false })
+        } else {
+          callback(null)
+        }
+
         return
       }
 
@@ -88,10 +98,14 @@ export class HttpAuthentication extends DeepstreamPlugin implements DeepstreamAu
       this.retryAttempts.delete(id)
 
       if (this.settings.permittedStatusCodes.indexOf(response.statusCode) === -1) {
-        if (typeof response.body === 'string' && response.body) {
-          callback({ isValid: false, clientData: { error: response.body }})
+        if (this.settings.reportInvalidParameters) {
+          if (typeof response.body === 'string' && response.body) {
+            callback({ isValid: false, clientData: { error: response.body }})
+          } else {
+            callback({ isValid: false, ...response.body })
+          }
         } else {
-          callback({ isValid: false, ...response.body })
+          callback(null)
         }
         return
       }
@@ -105,7 +119,7 @@ export class HttpAuthentication extends DeepstreamPlugin implements DeepstreamAu
     })
   }
 
-  private retry (id: number, connectionData: JSONObject, authData: JSONObject, callback: (result: DeepstreamAuthenticationResult) => void) {
+  private retry (id: number, connectionData: JSONObject, authData: JSONObject, callback: (result: DeepstreamAuthenticationResult | null) => void) {
     let retryAttempt = this.retryAttempts.get(id)
     if (!retryAttempt) {
       retryAttempt = {
@@ -122,12 +136,17 @@ export class HttpAuthentication extends DeepstreamPlugin implements DeepstreamAu
       setTimeout(() => this.validate(id, connectionData, authData, callback), this.settings.retryInterval)
     } else {
       this.retryAttempts.delete(id)
-      callback({
-        isValid: false,
-        clientData: {
-          error: EVENT.AUTH_RETRY_ATTEMPTS_EXCEEDED
-        }
-      })
+      if (this.settings.reportInvalidParameters) {
+        callback({
+          isValid: false,
+          clientData: {
+            error: EVENT.AUTH_RETRY_ATTEMPTS_EXCEEDED
+          }
+        })
+      } else {
+        this.services.logger.warn(EVENT.AUTH_ERROR, EVENT.AUTH_RETRY_ATTEMPTS_EXCEEDED)
+        callback(null)
+      }
     }
   }
 

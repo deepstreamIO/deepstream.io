@@ -6,6 +6,7 @@ import { createHash } from '../../../utils/utils'
 const STRING = 'string'
 
 interface StorageAuthConfig {
+  // fail authentication process if invalid login parameters are used
   reportInvalidParameters: boolean,
   // the table to store and lookup the users in
   table: string,
@@ -40,6 +41,9 @@ export class StorageBasedAuthentication extends DeepstreamPlugin implements Deep
   */
   constructor (private settings: StorageAuthConfig, private services: DeepstreamServices) {
     super()
+    if (this.settings.reportInvalidParameters === undefined) {
+      this.settings.reportInvalidParameters = true
+    }
   }
 
   public async whenReady (): Promise<void> {
@@ -115,6 +119,11 @@ export class StorageBasedAuthentication extends DeepstreamPlugin implements Deep
       }
     }
 
-    return { isValid: false }
+    if (this.settings.reportInvalidParameters) {
+      return { isValid: false }
+    } else {
+      return null
+    }
+
   }
 }
