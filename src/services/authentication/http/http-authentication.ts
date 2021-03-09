@@ -77,7 +77,12 @@ export class HttpAuthentication extends DeepstreamPlugin implements DeepstreamAu
       if (!response.statusCode) {
         this.services.logger.warn(EVENT.AUTH_ERROR, 'http auth server error: missing status code!')
         this.retryAttempts.delete(id)
-        callback({ isValid: false })
+        if (this.settings.reportInvalidParameters) {
+          callback({ isValid: false })
+        } else {
+          callback(null)
+        }
+
         return
       }
 
@@ -131,12 +136,17 @@ export class HttpAuthentication extends DeepstreamPlugin implements DeepstreamAu
       setTimeout(() => this.validate(id, connectionData, authData, callback), this.settings.retryInterval)
     } else {
       this.retryAttempts.delete(id)
-      callback({
-        isValid: false,
-        clientData: {
-          error: EVENT.AUTH_RETRY_ATTEMPTS_EXCEEDED
-        }
-      })
+      if (this.settings.reportInvalidParameters) {
+        callback({
+          isValid: false,
+          clientData: {
+            error: EVENT.AUTH_RETRY_ATTEMPTS_EXCEEDED
+          }
+        })
+      } else {
+        this.services.logger.warn(EVENT.AUTH_ERROR, EVENT.AUTH_RETRY_ATTEMPTS_EXCEEDED)
+        callback(null)
+      }
     }
   }
 
