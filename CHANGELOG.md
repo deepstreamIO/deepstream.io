@@ -1,3 +1,9 @@
+## [5.2.3] - 2021.03.09
+
+### Feature
+
+- enable combine authentication. Now when the auth config has more than one authentication strategy the server will query them in order untill one passes or all fail.
+
 ## [5.2.2] - 2021.03.01
 
 ### Feature
@@ -9,7 +15,7 @@
 
 ### Fixes
 
-- uws idleTimeout is in seconds! That's why it didn't closed the connection on time. 
+- uws idleTimeout is in seconds! That's why it didn't closed the connection on time.
 - buffer ack messages
 - remove noDelay from default-options and use it on subscription registry as a param to enable/disable buffering
 
@@ -54,7 +60,7 @@ This fix also exposes that we don't serialize STATE_TOPIC_REGISTRY/NOT_SUBSCRIBE
 
 - Fix #1089 install service gives error
 
-### Misc  
+### Misc
 
 - Updating dependencies
 
@@ -130,7 +136,7 @@ Fixes by the awesome @jaime-ez around heartbeats and ping messages!
 
 ## [5.0.16] - 2020.04.30
 
-### Feat  
+### Feat
 
 - Add two new plugins:
 
@@ -170,11 +176,11 @@ Fixes by the awesome @jaime-ez around heartbeats and ping messages!
                 bucketRegion: ${AWS_DEFAULT_REGION}
     ```
 
-- SocketData is passed to monitoring service in order to allow for fined grain monitoring.  
+- SocketData is passed to monitoring service in order to allow for fined grain monitoring.
 
-### Fix  
+### Fix
 
-- uws service accepts options requests and enforces CORS params  
+- uws service accepts options requests and enforces CORS params
 
 ## [5.0.15] - 2020.04.24
 
