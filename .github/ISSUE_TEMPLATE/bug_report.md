@@ -25,8 +25,6 @@ If applicable, add screenshots to help explain your problem.
 
 **Server version**
 
-**Client (Js, Java, other) and client version**
-
 **Protocol (binary or text)**
 
 **Websocket server (node-http or uws)**
@@ -34,6 +32,14 @@ If applicable, add screenshots to help explain your problem.
 **Server OS**
 
 **Node version**
+
+**Server config**
+Please share the config sections that might be relevant for this issue
+
+**Client (Js, Java, other) and client version**
+
+**Client config**
+Please share the config sections that might be relevant for this issue
 
 **Additional context**
 Add any other context about the problem here.
