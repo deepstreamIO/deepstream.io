@@ -23,13 +23,13 @@ telemetry:
   type: deepstreamIO
   options:
     # Disable telemetry entirely
-    enabled: true
+    enabled: false
     # Prints whatever will be sent to the telemetry endpoint,
     # without actually sending it
     debug: false
     # An anonymous uuid that allows us to know its one unique
     # deployment. Please don't generate these randomly if using
-    # node, it really skews up analytics. 
+    # node, it really skews up analytics.
     # deploymentId: <uuid goes here>
 
 rpc:

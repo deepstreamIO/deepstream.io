@@ -26,7 +26,7 @@ export class DeepstreamIOTelemetry extends DeepstreamPlugin implements Deepstrea
         if (this.pluginOptions.enabled === false) {
             this.logger.info(
                 EVENT.INFO,
-                'Telemetry disabled, please enable in order to support development of this project. Further info found at https://deepstream.io/blog/20200512-5.1-telemetry/'
+                'Telemetry disabled'
             )
             return
         }

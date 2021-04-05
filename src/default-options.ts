@@ -130,7 +130,7 @@ export function get (): DeepstreamConfig {
     telemetry: {
       type: 'deepstreamIO',
       options: {
-        enabled: true,
+        enabled: false,
       }
     },
 
