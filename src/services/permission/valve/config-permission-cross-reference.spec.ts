@@ -108,7 +108,7 @@ describe('permission handler loads data for cross referencing', () => {
     }
 
     const onDone = function (socketWrapper, msg, passItOn, error, result) {
-      expect(lastError()).to.contain('TypeError: Cannot read property \'isInStock\' of null')
+      expect(lastError()).to.contain('TypeError: Cannot read properties of null (reading \'isInStock\')')
       expect(result).to.equal(false)
       next()
     }

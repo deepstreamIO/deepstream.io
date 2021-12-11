@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-LTS_VERSION="12"
+LTS_VERSION="16"
 NODE_VERSION=$( node --version )
 NODE_VERSION_WITHOUT_V=$( echo ${NODE_VERSION} | cut -c2-10 )
 COMMIT=$( node scripts/details.js COMMIT )
@@ -107,7 +107,7 @@ function compile {
         @deepstream/storage-rethinkdb \
         @deepstream/storage-elasticsearch \
         @deepstream/storage-postgres
-    
+
     echo "Adding logger plugins"
     npm install --production --global-style \
         @deepstream/logger-winston
