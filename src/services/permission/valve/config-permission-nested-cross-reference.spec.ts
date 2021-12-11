@@ -62,7 +62,9 @@ describe('permission handler loads data for cross referencing', () => {
     }
 
     const onDone = function (socketWrapper, msg, passItOn, error, result) {
-      expect(lastError()).to.contain('Cannot read properties of undefined (reading \'is\')')
+      expect(lastError()).to.contain('TypeError')
+      .and.contain('undefined')
+      .and.contain('is')
       expect(result).to.equal(false)
       next()
     }
