@@ -1,3 +1,10 @@
+## [6.0.0] - 2021.12.12
+
+### Chore
+
+- Update nodejs to version 14.x
+- Update uWebsockets
+
 ## [5.2.6] - 2021.11.27
 
 ### Misc
