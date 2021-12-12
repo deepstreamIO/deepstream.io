@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [12.x, 14.x]
+        node-version: [14.x, 16.x]
     steps:
     - uses: actions/checkout@v2
     - name: Use Node.js ${{ matrix.node-version }}
@@ -19,7 +19,7 @@ jobs:
     - run: npm run test:all:coverage
     - run: npm run e2e:uws
     - name: Coveralls
-      if: startsWith(matrix.node-version, '12.')
+      if: startsWith(matrix.node-version, '14.')
       uses: coverallsapp/github-action@master
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}

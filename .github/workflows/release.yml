@@ -1,6 +1,6 @@
 name: release
 
-on:  
+on:
   push:
     # Sequence of patterns matched against refs/tags
     tags:
@@ -27,7 +27,7 @@ jobs:
     # Setup .npmrc file to publish to npm
     - uses: actions/setup-node@v1
       with:
-        node-version: '12.x'
+        node-version: '14.x'
         registry-url: 'https://registry.npmjs.org'
     - run: npm install
     - run: npm run lint
@@ -44,12 +44,12 @@ jobs:
       uses: actions/checkout@v2
     - name: Checkout submodules
       run: git submodule update --init --recursive
-    - name: Use Node.js 
+    - name: Use Node.js
       env:
         DEFAULT_DELAY: 50
       uses: actions/setup-node@v1
       with:
-        node-version: '12.x'
+        node-version: '14.x'
     - run: npm install
     - run: npm run lint
     - run: npm run test
@@ -68,12 +68,12 @@ jobs:
       uses: actions/checkout@v2
     - name: Checkout submodules
       run: git submodule update --init --recursive
-    - name: Use Node.js 
+    - name: Use Node.js
       env:
         DEFAULT_DELAY: 50
       uses: actions/setup-node@v1
       with:
-        node-version: '12.x'
+        node-version: '14.x'
     - run: npm install
     - run: npm run lint
     - run: npm run test
@@ -92,12 +92,12 @@ jobs:
       uses: actions/checkout@v2
     - name: Checkout submodules
       run: git submodule update --init --recursive
-    - name: Use Node.js 
+    - name: Use Node.js
       env:
         DEFAULT_DELAY: 50
       uses: actions/setup-node@v1
       with:
-        node-version: '12.x'
+        node-version: '14.x'
     - run: npm install
     - run: npm run lint
     - run: npm run test
@@ -115,5 +115,5 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v1
       with:
-        node-version: '12.x'
+        node-version: '14.x'
     - run: DOCKER_PASSWORD=${{ secrets.DOCKERHUB_TOKEN }} DOCKER_USERNAME=${{ secrets.DOCKERHUB_USERNAME }} bash scripts/docker.sh

@@ -48,7 +48,7 @@ if [[ ${ENV} = 'deb' ]]; then
   cat >>Dockerfile <<EOF
 RUN apt-get update
 RUN apt-get install -y curl build-essential git ruby ruby-dev rpm
-RUN curl -sL https://deb.nodesource.com/setup_12.x | bash -
+RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -
 RUN apt-get install -y nodejs
 EOF
 else
@@ -56,7 +56,7 @@ else
 RUN yum update -y
 RUN yum install -y git curl rpmbuild ruby ruby-devel rubygems rpm-build
 RUN yum -y install gcc gcc-c++ make openssl-devel
-RUN curl --silent --location https://rpm.nodesource.com/setup_12.x | bash -
+RUN curl --silent --location https://rpm.nodesource.com/setup_14.x | bash -
 RUN yum -y install nodejs
 EOF
 fi
