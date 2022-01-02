@@ -299,7 +299,6 @@ function distros {
 
 function clean {
     rm -rf ${DEEPSTREAM_PACKAGE}
-    rm build/deepstream
 }
 
 compile

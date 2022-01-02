@@ -114,7 +114,7 @@
   "husky": {
     "hooks": {
       "pre-commit": "npm run lint && npm run tsc",
-      "pre-push": "npm run tsc && npm t && npm run e2e -- --fail-fast && npm run e2e:uws -- --fail-fast && sh scripts/package.sh true true && node scripts/node-test.js",
+      "pre-push": "npm run tsc && npm t && npm run e2e -- --fail-fast && npm run e2e:uws -- --fail-fast && bash scripts/package.sh true true && node scripts/node-test.js && node scripts/executable-test.js",
       "pre-publish": "npm run tsc"
     }
   },
