@@ -14,13 +14,7 @@ DEEPSTREAM_PACKAGE=${PACKAGE_DIR}/deepstream.io
 GIT_BRANCH=$( git rev-parse --abbrev-ref HEAD )
 CREATE_DISTROS=false
 
-NODE_SOURCE="nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V"
-
-EXTENSION=""
-if [[ ${OS} = "win32" ]]; then
-    EXTENSION=".exe"
-fi
-EXECUTABLE_NAME="build/deepstream$EXTENSION"
+EXECUTABLE_NAME="build/deepstream"
 
 # Needed even for void builds for travis deploy to pass
 mkdir -p build
@@ -31,17 +25,8 @@ if ! [[ ${NODE_VERSION_WITHOUT_V} == ${LTS_VERSION}* ]]; then
 fi
 
 if [[ -z $1  ]]; then
-    if ! [[ ${TRAVIS_BRANCH} = 'master' ]] && ! [[ ${APPVEYOR_REPO_BRANCH} = 'master' ]] && ! [[ ${GIT_BRANCH} = 'master' ]]; then
+    if ! [[ ${GIT_BRANCH} = 'master' ]]; then
         echo "Running on branch ${GIT_BRANCH}"
-        if [[ -z ${TRAVIS_TAG} ]] && [[ -z ${APPVEYOR_REPO_TAG} ]]; then
-            echo "Only runs on tags or master"
-            exit
-        elif [[ ${APPVEYOR_REPO_TAG} = false ]]; then
-            echo "On appveyor, not a tag or master"
-            exit
-        else
-            echo "Running on tag $TRAVIS_TAG $APPVEYOR_REPO_TAG"
-        fi
     else
         echo "Running on master"
     fi
@@ -71,12 +56,6 @@ function compile {
 
     echo "Generating meta.json"
     node scripts/details.js META
-
-    # Nexe Patches
-    echo "Nexe Patches for Browserify, copying stub versions of optional installs since they aern't bundled anyway"
-
-    echo "Stubbing xml2js for needle"
-    mkdir -p node_modules/xml2js && echo "throw new Error()" >> node_modules/xml2js/index.js
 
     # Creating package structure
     rm -rf build/${PACKAGE_VERSION}
@@ -117,7 +96,7 @@ function compile {
     cd -
 
     echo "Creating '$EXECUTABLE_NAME', this will take a while..."
-    NODE_VERSION_WITHOUT_V=${NODE_VERSION_WITHOUT_V} EXECUTABLE_NAME=${EXECUTABLE_NAME} node scripts/nexe.js > /dev/null &
+    LTS=${LTS_VERSION} OS=${OS} EXECUTABLE_NAME=${EXECUTABLE_NAME} node scripts/pkg.js
 
     PROC_ID=$!
     SECONDS=0;
@@ -129,9 +108,9 @@ function compile {
     echo ""
 
     if wait ${pid}; then
-        echo -e "\tNexe Build Succeeded"
+        echo -e "\tPkg Build Succeeded"
     else
-        echo -e "\tNexe Build Failed"
+        echo -e "\tPkg Build Failed"
         exit 1
     fi
 

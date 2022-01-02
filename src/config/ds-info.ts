@@ -29,7 +29,7 @@ export const getDSInfo = (libDir?: string) => {
 const fetchLibs = (libDir: string, meta: any) => {
     const directory = libDir || 'lib'
     const files = glob.sync(path.join(directory, '*', 'package.json'))
-    meta.libs = files.map((filePath) => {
+    meta.libs = files.map((filePath: any) => {
         const pkg = fs.readFileSync(filePath, 'utf8')
         const object = JSON.parse(pkg)
         return `${object.name}:${object.version}`
