@@ -1,3 +1,10 @@
+## [6.0.1] - 2022.01.02
+
+### Task
+
+- Check that executable works in pre-push hook
+- Use pkg instead of nexe
+
 ## [6.0.0] - 2021.12.12
 
 ### Chore
