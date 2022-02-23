@@ -185,6 +185,16 @@ export class RecordTransition {
 
     if (error) {
       this.sendWriteAcknowledgementErrors(error.toString())
+
+      // send message in order to alert current message sender that the operation failed
+      if (this.currentStep && this.currentStep.sender && !this.currentStep.sender.isRemote) {
+        this.currentStep.sender.sendMessage({
+            topic: TOPIC.RECORD,
+            action: RECORD_ACTION.RECORD_UPDATE_ERROR,
+            name: this.currentStep.message.name,
+            isError: true
+        })
+      }
     }
 
     this.recordHandler.transitionComplete(this.name)
@@ -408,7 +418,7 @@ export class RecordTransition {
     for (const [socketWrapper, pendingWrites] of this.writeAckSockets) {
       for (const correlationId in pendingWrites) {
         socketWrapper.sendMessage({
-          topic: TOPIC.RECORD, action: RECORD_ACTION.RECORD_UPDATE_ERROR, reason: errorMessage, correlationId
+          topic: TOPIC.RECORD, action: RECORD_ACTION.RECORD_UPDATE_ERROR, correlationId, isWriteAck: true, isError: true
         })
       }
     }
@@ -430,7 +440,10 @@ export class RecordTransition {
         this.steps[i].sender.sendMessage({
           topic: TOPIC.RECORD,
           action: RECORD_ACTION.RECORD_UPDATE_ERROR,
-          name: this.steps[i].message.name
+          name: this.steps[i].message.name,
+          isError: true,
+          isWriteAck: this.steps[i].message.isWriteAck,
+          correlationId: this.steps[i].message.correlationId
         })
       }
     }
