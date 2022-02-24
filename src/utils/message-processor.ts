@@ -118,6 +118,10 @@ export default class MessageProcessor {
       if (message.correlationId) {
         permissionErrorMessage.correlationId = message.correlationId
       }
+      if (message.isWriteAck) {
+        permissionErrorMessage.isWriteAck = true
+      }
+
       socketWrapper.sendMessage(permissionErrorMessage)
       return
     }
@@ -133,6 +137,10 @@ export default class MessageProcessor {
       if (message.correlationId) {
         permissionDeniedMessage.correlationId = message.correlationId
       }
+      if (message.isWriteAck) {
+        permissionDeniedMessage.isWriteAck = true
+      }
+
       socketWrapper.sendMessage(permissionDeniedMessage)
       return
     }
