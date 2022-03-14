@@ -1,33 +1,50 @@
 import { Message, TOPIC } from '../../constants'
 import * as cluster from 'cluster'
 import { EventEmitter } from 'events'
-import { DeepstreamClusterNode, DeepstreamPlugin, DeepstreamServices, DeepstreamConfig } from '@deepstream/types'
-
-if (cluster.isWorker) {
-    process.on('message', (serializedMessage) => {
-        const { serverName, message }: { serverName: string, message: Message } = JSON.parse(serializedMessage)
-        VerticalClusterNode.emitter.emit(TOPIC[message.topic!], message, serverName)
-    })
-}
+import { DeepstreamClusterNode, DeepstreamPlugin, DeepstreamServices, DeepstreamConfig, EVENT } from '@deepstream/types'
 
 if (cluster.isMaster) {
     cluster.on('message', (worker, serializedMessage: string, handle) => {
         for (const id in cluster.workers) {
-            const fromWorker = cluster.workers[id]!
-            if (fromWorker !== worker) {
-                worker.send(serializedMessage)
+            const toWorker = cluster.workers[id]!
+            if (toWorker !== worker) {
+                toWorker.send(serializedMessage)
             }
         }
     })
 }
 
 export class VerticalClusterNode extends DeepstreamPlugin implements DeepstreamClusterNode {
-    public static emitter = new EventEmitter()
     public description: string = 'Vertical Cluster Message Bus'
+    private isReady: boolean = false
+    public static emitter = new EventEmitter()
     private callbacks = new Map<string, any>()
 
-    constructor (pluginConfig: any, services: DeepstreamServices, private config: DeepstreamConfig) {
+    constructor (pluginConfig: any, private services: DeepstreamServices, private config: DeepstreamConfig) {
         super()
+    }
+
+    public init () {
+        if (cluster.isWorker) {
+            process.on('message', (serializedMessage) => {
+                const { fromServer, message } = JSON.parse(serializedMessage)
+
+                VerticalClusterNode.emitter.emit(TOPIC[message.topic], message, fromServer)
+
+                const callbacks = this.callbacks.get(TOPIC[message.topic])
+                    if (!callbacks || callbacks.size === 0) {
+                        if (this.isReady) {
+                            this.services.logger.warn(EVENT.PLUGIN_ERROR, `Received message for unknown topic ${TOPIC[message.topic]}`)
+                        }
+                        return
+                    }
+                    callbacks.forEach((callback: Function) => callback(message, fromServer))
+            })
+        }
+    }
+
+    async whenReady (): Promise<void> {
+        this.isReady = true
     }
 
     public send (message: Message, metaData?: any): void {
@@ -39,13 +56,23 @@ export class VerticalClusterNode extends DeepstreamPlugin implements DeepstreamC
     }
 
     public subscribe<SpecificMessage> (stateRegistryTopic: TOPIC, callback: (message: SpecificMessage, originServerName: string) => void): void {
-        this.callbacks.set(TOPIC[stateRegistryTopic], callback)
         VerticalClusterNode.emitter.on(TOPIC[stateRegistryTopic], callback)
+
+        let callbacks = this.callbacks.get(TOPIC[stateRegistryTopic])
+        if (!callbacks) {
+            callbacks = new Set()
+            this.callbacks.set(TOPIC[stateRegistryTopic], callbacks)
+        }
+        callbacks.add(callback)
     }
 
     public async close (): Promise<void> {
-        for (const [topic, callback] of this.callbacks) {
-            VerticalClusterNode.emitter.off(topic, callback)
+        for (const [topic, callbacks] of this.callbacks) {
+            for (const callback of callbacks) {
+                VerticalClusterNode.emitter.off(topic, callback)
+            }
         }
+        this.callbacks.clear()
+        this.isReady = false
     }
 }

@@ -117,6 +117,7 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
      * <clusterNodeInactiveTimeout> milliseconds ago.
      */
     private checkNodes () {
+        // Never remove a single node instance
         if (this.nodes.size === 1) {
             return
         }

@@ -4,9 +4,10 @@ import { EOL } from 'os'
 
 import * as utils from '../utils/utils'
 import * as fileUtils from './file-utils'
-import { DeepstreamConfig, DeepstreamServices, DeepstreamConnectionEndpoint, PluginConfig, DeepstreamLogger, DeepstreamAuthentication, DeepstreamPermission, LOG_LEVEL, EVENT, DeepstreamMonitoring, DeepstreamAuthenticationCombiner, DeepstreamHTTPService } from '@deepstream/types'
+import { DeepstreamConfig, DeepstreamServices, DeepstreamConnectionEndpoint, PluginConfig, DeepstreamLogger, DeepstreamAuthentication, DeepstreamPermission, LOG_LEVEL, EVENT, DeepstreamMonitoring, DeepstreamAuthenticationCombiner, DeepstreamHTTPService, DeepstreamClusterNode } from '@deepstream/types'
 import { DistributedClusterRegistry } from '../services/cluster-registry/distributed-cluster-registry'
 import { SingleClusterNode } from '../services/cluster-node/single-cluster-node'
+import { VerticalClusterNode } from '../services/cluster-node/vertical-cluster-node'
 import { DefaultSubscriptionRegistryFactory } from '../services/subscription-registry/default-subscription-registry-factory'
 import { HTTPConnectionEndpoint } from '../connection-endpoint/http/connection-endpoint'
 import { CombineAuthentication } from '../services/authentication/combine/combine-authentication'
@@ -131,7 +132,7 @@ export const initialize = function (deepstream: Deepstream, config: DeepstreamCo
   services.permission = handlePermissionStrategies(config, services)
   services.connectionEndpoints = handleConnectionEndpoints(config, services)
   services.locks = new (resolvePluginClass(config.locks, 'locks', services.logger))(config.locks.options, services, config)
-  services.clusterNode = new (resolvePluginClass(config.clusterNode, 'clusterNode', services.logger))(config.clusterNode.options, services, config)
+  services.clusterNode = handleClusterNode(config, services)
   services.clusterRegistry = new (resolvePluginClass(config.clusterRegistry, 'clusterRegistry', services.logger))(config.clusterRegistry.options, services, config)
   services.clusterStates = new (resolvePluginClass(config.clusterStates, 'clusterStates', services.logger))(config.clusterStates.options, services, config)
   services.httpService = handleHTTPServer(config, services)
@@ -148,6 +149,20 @@ function handleUUIDProperty (config: DeepstreamConfig): void {
   if (config.serverName === 'UUID') {
     config.serverName = utils.getUid()
   }
+}
+
+function handleClusterNode  (config: DeepstreamConfig, services: any): DeepstreamClusterNode {
+  let ClusterNodeClass = defaultPlugins.get('clusterNode')
+  if (config.clusterNode.name === 'vertical') {
+      ClusterNodeClass = VerticalClusterNode
+  } else if (config.clusterNode.name || config.clusterNode.path) {
+    ClusterNodeClass = resolvePluginClass(config.clusterNode, 'clusterNode', services.logger)
+    if (!ClusterNodeClass) {
+      throw new Error(`unable to resolve plugin ${config.clusterNode.name || config.clusterNode.path}`)
+    }
+  }
+
+  return new ClusterNodeClass(config.clusterNode.options, services, config)
 }
 
 /**
