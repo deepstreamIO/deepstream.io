@@ -27,18 +27,18 @@ export class VerticalClusterNode extends DeepstreamPlugin implements DeepstreamC
     public init () {
         if (cluster.isWorker) {
             process.on('message', (serializedMessage) => {
-                const { fromServer, message } = JSON.parse(serializedMessage)
+                if (this.isReady) {
+                    const { fromServer, message } = JSON.parse(serializedMessage)
 
-                VerticalClusterNode.emitter.emit(TOPIC[message.topic], message, fromServer)
+                    VerticalClusterNode.emitter.emit(TOPIC[message.topic], message, fromServer)
 
-                const callbacks = this.callbacks.get(TOPIC[message.topic])
-                    if (!callbacks || callbacks.size === 0) {
-                        if (this.isReady) {
+                    const callbacks = this.callbacks.get(TOPIC[message.topic])
+                        if (!callbacks || callbacks.size === 0) {
                             this.services.logger.warn(EVENT.PLUGIN_ERROR, `Received message for unknown topic ${TOPIC[message.topic]}`)
+                            return
                         }
-                        return
-                    }
-                    callbacks.forEach((callback: Function) => callback(message, fromServer))
+                        callbacks.forEach((callback: Function) => callback(message, fromServer))
+                }
             })
         }
     }
