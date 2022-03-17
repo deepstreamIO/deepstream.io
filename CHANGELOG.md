@@ -1,3 +1,15 @@
+## [6.1.0] - 2022.03.17
+
+### Fix
+
+- Send write ack error messages when cache, storage or permission fails. For this to work it requires client version >= 6
+- Do not remove cluster nodes if cluster size is 1
+
+### Feature
+
+- Enable vertical cluster node option:
+Now we can use all available cores in a vertical cluster! By setting the cluster option to `clusterNode: { name: 'vertical' }` you can run as many deepstream instances you want in each of the server cores and it will be one syncronized cluster.
+
 ## [6.0.1] - 2022.01.02
 
 ### Task
