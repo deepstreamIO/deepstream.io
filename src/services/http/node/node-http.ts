@@ -61,7 +61,7 @@ export class NodeHTTP extends DeepstreamPlugin implements DeepstreamHTTPService 
 
     this.jsonBodyParser = bodyParser.json({
         inflate: true,
-        limit: `${pluginOptions.maxMessageSize / 1024}mb`
+        limit: `${pluginOptions.maxMessageSize}b`
     })
   }
 

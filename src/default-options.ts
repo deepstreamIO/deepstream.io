@@ -91,7 +91,7 @@ export function get (): DeepstreamConfig {
         allowAllOrigins: true,
         origins: [],
         headers: [],
-        maxMessageSize: 1024
+        maxMessageSize: 1048576
       }
     },
 
