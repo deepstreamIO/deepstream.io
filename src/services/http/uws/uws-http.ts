@@ -1,5 +1,4 @@
 import { DeepstreamPlugin, DeepstreamHTTPService, PostRequestHandler, GetRequestHandler, DeepstreamServices, DeepstreamConfig, SocketWrapper, WebSocketConnectionEndpoint, SocketWrapperFactory, EVENT, DeepstreamHTTPMeta, DeepstreamHTTPResponse } from '@deepstream/types'
-// import * as HTTPStatus from 'http-status'
 import { Dictionary } from 'ts-essentials'
 import { STATES } from '../../../constants'
 import { PromiseDelay } from '../../../utils/utils'
@@ -135,13 +134,13 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
           meta,
           this.sendResponse.bind(this, response)
         )
-      }, () => {
+      }, (code: number) => {
         this.terminateResponse(
           response,
-          HTTPStatus.BAD_REQUEST,
-          'Failed to parse body of request'
+          code,
+          HTTPStatus[`${code}_MESSAGE`] as string
         )
-      })
+      }, this.pluginOptions.maxMessageSize)
     })
   }
 
@@ -362,19 +361,26 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
 }
 
 /* Helper function for reading a posted JSON body */
-function readJson (res: uws.HttpResponse, cb: Function, err: (res: uws.HttpResponse) => void) {
+function readJson (res: uws.HttpResponse, cb: Function, err: (code: number) => void, limit: number) {
   let buffer: Buffer
+  let received: number = 0
 
   res.onData((ab, isLast) => {
     const chunk = Buffer.from(ab)
+    received += chunk.length
+    // check max length
+    if (received > limit) {
+      err(HTTPStatus.REQUEST_ENTITY_TOO_LARGE)
+      return
+    }
+
     if (isLast) {
       let json
       if (buffer) {
         try {
           json = JSON.parse(Buffer.concat([buffer, chunk]).toString())
         } catch (e) {
-          /* res.close calls onAborted */
-          res.close()
+          err(HTTPStatus.BAD_REQUEST)
           return
         }
         cb(json)
@@ -382,8 +388,7 @@ function readJson (res: uws.HttpResponse, cb: Function, err: (res: uws.HttpRespo
         try {
           json = JSON.parse(chunk.toString())
         } catch (e) {
-          /* res.close calls onAborted */
-          res.close()
+          err(HTTPStatus.BAD_REQUEST)
           return
         }
         cb(json)
