@@ -1,6 +1,7 @@
 import { defaultDelay } from '../../framework/utils'
 import {When, Then, Given} from 'cucumber'
 const { record } = require(`../../framework${process.env.V3 ? '-v3' : ''}/record`)
+const { client } = require(`../../framework${process.env.V3 ? '-v3' : ''}/client`)
 
 When(/(.+) gets? the record "([^"]*)"$/, (clientExpression: string, recordName: string, done) => {
   record.getRecord(clientExpression, recordName)
@@ -20,7 +21,13 @@ Then(/^(.+) (gets?|is not) notified of record "([^"]*)" getting (discarded|delet
   }
 })
 
-Then(/^(.+) receives? an? "([^"]*)" error on record "([^"]*)"$/, record.assert.receivedRecordError)
+Then(/^(.+) receives? an? "([^"]*)" error on record "([^"]*)"$/, (clientExpression: string, error: string, recordName: string, done) => {
+  record.assert.receivedRecordError(clientExpression, error, recordName)
+
+  if (recordName ==='only-a-can-read-and-create') client.receivedOneError(clientExpression, 'record', error)
+
+  setTimeout(done, defaultDelay)
+})
 
 Then(/^(.+) receives? an update for record "([^"]*)" with data '([^']+)'$/, record.assert.receivedUpdate)
 
