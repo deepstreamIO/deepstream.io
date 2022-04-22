@@ -1,3 +1,13 @@
+## [6.1.1] - 2022.04.22
+
+### Fix
+
+- Check maxMessageSize limit on POST requests when using uws http server
+
+### Chore
+
+- update @deepstream/client dev dependency and update e2e tests
+
 ## [6.1.0] - 2022.03.17
 
 ### Fix

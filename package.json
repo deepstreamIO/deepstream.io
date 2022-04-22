@@ -1,6 +1,6 @@
 {
   "name": "@deepstream/server",
-  "version": "6.1.0",
+  "version": "6.1.1",
   "description": "a scalable server for realtime webapps",
   "main": "./dist/src/deepstream.io.js",
   "bin": {
@@ -74,7 +74,7 @@
     "ws": "^7.5.6"
   },
   "devDependencies": {
-    "@deepstream/client": "^5.1.10",
+    "@deepstream/client": "^6.0.1",
     "@types/adm-zip": "^0.4.33",
     "@types/body-parser": "^1.19.0",
     "@types/content-type": "^1.1.3",
