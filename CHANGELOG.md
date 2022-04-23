@@ -1,3 +1,9 @@
+## [6.1.2] - 2022.04.22
+
+### Fix
+
+- Revert to lockfileVersion 1
+
 ## [6.1.1] - 2022.04.22
 
 ### Fix
