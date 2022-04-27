@@ -24,6 +24,7 @@ export class StdOutLogger extends DeepstreamPlugin implements DeepstreamLogger {
   constructor (private options: any = {}, private services: DeepstreamServices, config: DeepstreamConfig) {
     super()
     this.useColors = this.options.colors === undefined ? true : this.options.colors
+    this.setLogLevel(config.logLevel)
   }
 
   public async whenReady (): Promise<void> {
