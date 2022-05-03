@@ -108,7 +108,10 @@ export function get (): DeepstreamConfig {
 
     permission: {
       type: 'none',
-      options: {}
+      options: {
+        maxRuleIterations: 3,
+        cacheEvacuationInterval: 60000
+      }
     },
 
     cache: {
@@ -169,12 +172,12 @@ export function get (): DeepstreamConfig {
     rpc: {
       /**
        * Send requestorName by default.
-       * Overriden by provideRequestorDetails
+       * Overriden by provideRPCRequestorDetails
        */
       provideRequestorName: true,
       /**
        * Send requestorData by default.
-       * Overriden by provideRequestorDetails
+       * Overriden by provideRPCRequestorDetails
        */
       provideRequestorData: true,
 
