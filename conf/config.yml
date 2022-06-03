@@ -9,6 +9,8 @@ dependencyInitializationTimeout: 5000
 #libDir: ../lib
 # Exit the process a fatal error occurs, like losing a cache connection
 exitOnFatalError: false
+# Log messages with this level and above. Valid levels are DEBUG, INFO, WARN, ERROR, OFF
+logLevel: INFO
 
 # This disables specific feature in DS, which is a more performant way
 # than disabling via permissions and is also how telemetry figures out
@@ -37,6 +39,10 @@ rpc:
   ackTimeout: 1000
   # Timeout for actual RPC provider response
   responseTimeout: 10000
+  # Send requestorName by default.
+  provideRequestorName: true
+  # Send requestorData by default.
+  provideRequestorData: true
 
 record:
   # Maximum time permitted to fetch from cache
@@ -79,6 +85,8 @@ httpServer:
     # below will be permitted and the 'Access-Control-Allow-Credentials' response header will be
     # enabled
     allowAllOrigins: true
+    # maximum allowed size of a POST request body, in bytes, defaults to 1 MB
+    maxMessageSize: 1048576
     # a list of allowed origins
     origins:
       - 'https://example.com'
@@ -92,13 +100,23 @@ httpServer:
   # options:
   #   # url path for http health-checks, GET requests to this path will return 200 if deepstream is alive
   #   healthCheckPath: /health-check
+  #   # -- CORS --
+  #   # if disabled, only requests with an 'Origin' header matching one specified under 'origins'
+  #   # below will be permitted and the 'Access-Control-Allow-Credentials' response header will be
+  #   # enabled
+  #   allowAllOrigins: true
+  #   # a list of allowed origins
+  #   origins:
+  #     - 'https://example.com'
+  #   # maximum allowed size of a POST request body, in bytes, defaults to 1 MB
+  #   maxMessageSize: 1048576
   #   # Headers to copy over from websocket
   #   headers:
   #     - user-agent
   #   # Options required to create an ssl app
-  #   # ssl:
-  #   #   key: file(ssl/key.pem)
-  #   #   cert: file(ssl/cert.pem)
+  #   ssl:
+  #     key: file(ssl/key.pem)
+  #     cert: file(ssl/cert.pem)
   #   ##  dhParams: ...
   #   ##  passphrase: ...
 
@@ -112,12 +130,14 @@ connectionEndpoints:
       # the amount of milliseconds between each ping/heartbeat message
       heartbeatInterval: 30000
       # the amount of milliseconds that writes to sockets are buffered
-      outgoingBufferTimeout: 10
+      outgoingBufferTimeout: 0
       # the maximum amount of bytes to buffer before flushing, stops the client from large enough packages
       # to block its responsiveness
       maxBufferByteSize: 100000
 
       # Security
+      # should the server log invalid auth data, defaults to false
+      logInvalidAuthData: false
       # amount of time a connection can remain open while not being logged in
       unauthenticatedClientTimeout: 180000
       # invalid login attempts before the connection is cut
@@ -125,63 +145,63 @@ connectionEndpoints:
       # maximum allowed size of an individual message in bytes
       maxMessageSize: 1048576
 
-  - type: ws-text
-    options:
-      # url path websocket connections connect to
-      urlPath: /deepstream-v3
-      # the amount of milliseconds between each ping/heartbeat message
-      heartbeatInterval: 30000
-      # the amount of milliseconds that writes to sockets are buffered
-      outgoingBufferTimeout: 10
-      # the maximum amount of bytes to buffer before flushing, stops the client from large enough packages
-      # to block its responsiveness
-      maxBufferByteSize: 100000
+  # - type: ws-text
+  #   options:
+  #     # url path websocket connections connect to
+  #     urlPath: /deepstream-v3
+  #     # the amount of milliseconds between each ping/heartbeat message
+  #     heartbeatInterval: 30000
+  #     # the amount of milliseconds that writes to sockets are buffered
+  #     outgoingBufferTimeout: 0
+  #     # the maximum amount of bytes to buffer before flushing, stops the client from large enough packages
+  #     # to block its responsiveness
+  #     maxBufferByteSize: 100000
 
-      # Security
-      # amount of time a connection can remain open while not being logged in
-      unauthenticatedClientTimeout: 180000
-      # invalid login attempts before the connection is cut
-      maxAuthAttempts: 3
-      # maximum allowed size of an individual message in bytes
-      maxMessageSize: 1048576
+  #     # Security
+  #     # should the server log invalid auth data, defaults to false
+  #     logInvalidAuthData: false
+  #     # amount of time a connection can remain open while not being logged in
+  #     unauthenticatedClientTimeout: 180000
+  #     # invalid login attempts before the connection is cut
+  #     maxAuthAttempts: 3
+  #     # maximum allowed size of an individual message in bytes
+  #     maxMessageSize: 1048576
 
-  - type: ws-json
-    options:
-      # url path websocket connections connect to
-      urlPath: /deepstream-json
-      # the amount of milliseconds between each ping/heartbeat message
-      heartbeatInterval: 30000
-      # the amount of milliseconds that writes to sockets are buffered
-      outgoingBufferTimeout: 10
-      # the maximum amount of bytes to buffer before flushing, stops the client from large enough packages
-      # to block its responsiveness
-      maxBufferByteSize: 100000
+  # - type: ws-json
+  #   options:
+  #     # url path websocket connections connect to
+  #     urlPath: /deepstream-json
+  #     # the amount of milliseconds between each ping/heartbeat message
+  #     heartbeatInterval: 30000
+  #     # the amount of milliseconds that writes to sockets are buffered
+  #     outgoingBufferTimeout: 0
+  #     # the maximum amount of bytes to buffer before flushing, stops the client from large enough packages
+  #     # to block its responsiveness
+  #     maxBufferByteSize: 100000
 
-      # Security
-      # amount of time a connection can remain open while not being logged in
-      unauthenticatedClientTimeout: 180000
-      # invalid login attempts before the connection is cut
-      maxAuthAttempts: 3
-      # maximum allowed size of an individual message in bytes
-      maxMessageSize: 1048576
-
+  #     # Security
+  #     # should the server log invalid auth data, defaults to false
+  #     logInvalidAuthData: false
+  #     # amount of time a connection can remain open while not being logged in
+  #     unauthenticatedClientTimeout: 180000
+  #     # invalid login attempts before the connection is cut
+  #     maxAuthAttempts: 3
+  #     # maximum allowed size of an individual message in bytes
+  #     maxMessageSize: 1048576
 
   - type: http
     options:
       # allow 'authData' parameter in POST requests, if disabled only token and OPEN auth is
       # possible
       allowAuthData: true
-      # enable the authentication endpoint for requesting tokens/userData.
-      # note: a custom authentication handler is required for token generation
-      enableAuthEndpoint: false
-      # path for authentication requests
-      authPath: /api/auth
       # path for POST requests
       postPath: /api
       # path for GET requests
       getPath: /api
-      # maximum allowed size of an individual message in bytes
-      maxMessageSize: 1024
+      # should the server log invalid auth data, defaults to false
+      logInvalidAuthData: false
+      # http request timeout in milliseconds, defaults to 20000
+      requestTimeout: 20000
 
   # - type: mqtt
   #   options:
@@ -198,8 +218,6 @@ logger:
   type: default
   options:
     colors: true
-    # Log messages with this level and above. Valid levels are DEBUG, INFO, WARN, ERROR, OFF
-    logLevel: INFO
 
   # log using json, this supports meta objects
   # name: pino
