@@ -35,7 +35,6 @@ function getPluginOptions (name: string, types: string[], properties: any) {
 const generalOptions = {
   libDir: { type: ['string', 'null'] },
   serverName: { type: 'string', minLength: 1 },
-  externalUrl: { type: ['null', 'string'] },
   showLogo: { type: 'boolean' },
   exitOnFatalError: { type: 'boolean' },
   dependencyInitializationTimeout: { type: 'number', minimum: 1000 },

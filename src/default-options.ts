@@ -31,11 +31,6 @@ export function get (): DeepstreamConfig {
     exitOnFatalError: false,
 
     /*
-     * Connectivity
-     */
-    externalUrl: null,
-
-    /*
      * Connection Endpoints
      */
     connectionEndpoints: [

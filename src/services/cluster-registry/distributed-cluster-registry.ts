@@ -174,7 +174,6 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
             action: CLUSTER_ACTION.STATUS,
             serverName: this.config.serverName,
             leaderScore: this.leaderScore,
-            externalUrl: this.config.externalUrl,
             role: this.role
         } as ClusterMessage
         this.updateNode(message)
