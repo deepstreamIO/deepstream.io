@@ -166,15 +166,13 @@ export function get (): DeepstreamConfig {
 
     rpc: {
       /**
-       * Send requestorName by default.
-       * Overriden by provideRPCRequestorDetails
+       * Don't send requestorName by default.
        */
-      provideRequestorName: true,
+      provideRequestorName: false,
       /**
-       * Send requestorData by default.
-       * Overriden by provideRPCRequestorDetails
+       * Don't send requestorData by default.
        */
-      provideRequestorData: true,
+      provideRequestorData: false,
 
       ackTimeout: 1000,
       responseTimeout: 10000,

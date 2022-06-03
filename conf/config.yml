@@ -39,10 +39,10 @@ rpc:
   ackTimeout: 1000
   # Timeout for actual RPC provider response
   responseTimeout: 10000
-  # Send requestorName by default.
-  provideRequestorName: true
-  # Send requestorData by default.
-  provideRequestorData: true
+  # Don't send requestorName by default.
+  provideRequestorName: false
+  # Don't send requestorData by default.
+  provideRequestorData: false
 
 record:
   # Maximum time permitted to fetch from cache
