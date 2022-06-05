@@ -3,10 +3,10 @@ import { expect } from 'chai'
 import {spy} from 'sinon'
 
 import { StdOutLogger } from './std-out-logger'
-import { LOG_LEVEL, EVENT } from '@deepstream/types';
+import { LOG_LEVEL, EVENT, DeepstreamConfig } from '@deepstream/types';
 
 describe('logs to stdout and stderr', () => {
-  const logger = new StdOutLogger({ color: false })
+  const logger = new StdOutLogger({ color: false }, undefined, { logLevel: LOG_LEVEL.DEBUG } as DeepstreamConfig)
   const originalStdOut = process.stdout
   const originalStdErr = process.stderr
   const stdout = spy()
@@ -35,13 +35,13 @@ describe('logs to stdout and stderr', () => {
 
   it('creates the logger', async () => {
     await logger.whenReady()
-    logger.log(LOG_LEVEL.INFO, EVENT.INFO, 'b')
+    logger.info(EVENT.INFO, 'b')
     expect(comp(stdout, 'INFO | b')).to.equal(true)
   })
 
   it('logs to stderr', () => {
     stdout.resetHistory()
-    logger.log(LOG_LEVEL.ERROR, EVENT.INFO, 'e')
+    logger.error(EVENT.INFO, 'e')
     expect(stdout).to.have.callCount(0)
     expect(stderr).to.have.callCount(1)
   })
@@ -49,11 +49,11 @@ describe('logs to stdout and stderr', () => {
   it('logs above log level', () => {
     logger.setLogLevel(LOG_LEVEL.DEBUG)
     stdout.resetHistory()
-    logger.log(LOG_LEVEL.INFO, EVENT.INFO, 'e')
+    logger.info(EVENT.INFO, 'e')
     expect(stdout).to.have.callCount(1)
     logger.setLogLevel(LOG_LEVEL.WARN)
     stdout.resetHistory()
-    logger.log(LOG_LEVEL.INFO, EVENT.INFO, 'e')
+    logger.info(EVENT.INFO, 'e')
     expect(stdout).to.have.callCount(0)
   })
 })
