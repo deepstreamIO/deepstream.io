@@ -1,3 +1,15 @@
+## [6.2.0] -
+
+### Task
+
+- eliminate externalUrl from config and cluster messages since it was not used
+
+- set `provideRequestorName` and `provideRequestorData` as false by default to avoid overhead since from now on that data can actually be sent on rpc messages and handled on @deepstream/client > 6.0.2.
+
+### Misc
+
+- update submodules and deps
+
 ## [6.1.2] - 2022.04.22
 
 ### Fix
