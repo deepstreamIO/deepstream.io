@@ -1,6 +1,6 @@
 {
   "name": "@deepstream/server",
-  "version": "6.2.0",
+  "version": "6.2.1",
   "description": "a scalable server for realtime webapps",
   "main": "./dist/src/deepstream.io.js",
   "bin": {
@@ -53,7 +53,7 @@
     "url": "https://github.com/deepstreamIO/deepstream.io.git"
   },
   "dependencies": {
-    "@deepstream/protobuf": "^1.0.7",
+    "@deepstream/protobuf": "^1.0.8",
     "@deepstream/types": "^2.3.0",
     "ajv": "^6.12.6",
     "better-ajv-errors": "^0.8.2",
@@ -74,7 +74,7 @@
     "ws": "^7.5.6"
   },
   "devDependencies": {
-    "@deepstream/client": "^6.0.2",
+    "@deepstream/client": "^6.0.5",
     "@types/adm-zip": "^0.4.33",
     "@types/body-parser": "^1.19.0",
     "@types/content-type": "^1.1.3",
