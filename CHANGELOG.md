@@ -1,3 +1,11 @@
+## [6.2.2] - 2022.12.22
+
+### Fix
+
+- Enforce http origins options
+- log a warning when a websocket message is not sent
+- uws server add maxBackpressure option, defaults to 1024*1024
+
 ## [6.2.1] - 2022.06.20
 
 ### Task
