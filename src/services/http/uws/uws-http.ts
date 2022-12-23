@@ -12,6 +12,7 @@ interface UWSHTTPInterface extends uws.AppOptions {
     allowAllOrigins: boolean,
     origins?: string[],
     maxMessageSize: number,
+    maxBackpressure?: number,
     headers: string[],
     hostUrl: string
 }
@@ -24,7 +25,7 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
   private connections = new Map<uws.WebSocket, SocketWrapper>()
   private listenSocket!: uws.us_listen_socket
   private isGettingReady: boolean = false
-  private origins?: string[]
+  private maxBackpressure?: number = 1024*1024
   private methods: string[] = ['GET', 'POST', 'OPTIONS']
   private methodsStr: string = this.methods.join(', ')
   private headers: string[] = ['X-Requested-With', 'X-HTTP-Method-Override', 'Content-Type', 'Accept']
@@ -35,10 +36,15 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
     super()
 
     if (this.pluginOptions.allowAllOrigins === false) {
-        if (!this.pluginOptions.origins) {
+        if (this.pluginOptions.origins?.length === 0) {
           this.services.logger.fatal(EVENT.INVALID_CONFIG_DATA, 'HTTP allowAllOrigins set to false but no origins provided')
         }
     }
+    // set maxBackpressure if defined, default is 1024*1024
+    if (this.pluginOptions.maxBackpressure) {
+      this.maxBackpressure = this.pluginOptions.maxBackpressure
+    }
+
     // alias require to trick nexe from bundling it
     const req = require
     try {
@@ -167,7 +173,12 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
   }
 
   public sendWebsocketMessage (socket: uws.WebSocket, message: Uint8Array | string, isBinary: boolean) {
-    socket.send(message, isBinary)
+    const ok = socket.send(message, isBinary)
+    if (!ok) {
+      // message was not sent
+      const socketWrapper = this.connections.get(socket)!
+      this.services.logger.warn(EVENT.ERROR, `Failed to deliver message to userId ${socketWrapper.userId}, current socket backpressure ${socket.getBufferedAmount()}`)
+    }
   }
 
   public getSocketWrappersForUserId (userId: string) {
@@ -175,13 +186,16 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
   }
 
   public registerWebsocketEndpoint (path: string, createSocketWrapper: SocketWrapperFactory, webSocketConnectionEndpoint: WebSocketConnectionEndpoint) {
-    // uws idleTimeout is in seconds and has a ~5 seconds resolution
-    const idleTimeout = webSocketConnectionEndpoint.wsOptions.heartbeatInterval * 2 / 1000 > 6 ? webSocketConnectionEndpoint.wsOptions.heartbeatInterval * 2 / 1000 : 6
+    // uws idleTimeout is in seconds and requires it to be > 8
+    const idleTimeout = webSocketConnectionEndpoint.wsOptions.heartbeatInterval * 2 / 1000 > 8 ? webSocketConnectionEndpoint.wsOptions.heartbeatInterval * 2 / 1000 : 8
 
     this.server.ws(path, {
       /* Options */
       compression: 0,
+      /* Maximum length of received message. If a client tries to send you a message larger than this, the connection is immediately closed.*/
       maxPayloadLength: webSocketConnectionEndpoint.wsOptions.maxMessageSize,
+      /* Maximum length of allowed backpressure per socket when sending messages. Slow receivers with too high backpressure will not receive messages */
+      maxBackpressure: this.maxBackpressure,
       idleTimeout,
       upgrade: (response: uws.HttpResponse, request: uws.HttpRequest, context: any) => {
           /* This immediately calls open handler, you must not use response after this call */
@@ -210,7 +224,9 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
           socketWrapper.onMessage(messages)
         }
       },
-      drain: () => {
+      drain: (socket: uws.WebSocket) => {
+        const socketWrapper = this.connections.get(socket)!
+        this.services.logger.info(EVENT.INFO, `Socket backpressure drained for userId ${socketWrapper.userId}, current socket backpressure ${socket.getBufferedAmount()}`)
       },
       close: (ws: uws.WebSocket) => {
         webSocketConnectionEndpoint.onSocketClose.call(webSocketConnectionEndpoint, this.connections.get(ws)!)
@@ -289,7 +305,7 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
       return false
     }
 
-    if (this.origins!.indexOf(requestOriginUrl) === -1) {
+    if (this.pluginOptions.origins!.indexOf(requestOriginUrl) === -1) {
       if (!requestOriginUrl) {
         this.terminateResponse(
           response,
