@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-LTS_VERSION="14"
+LTS_VERSION="18"
 NODE_VERSION=$( node --version )
 NODE_VERSION_WITHOUT_V=$( echo ${NODE_VERSION} | cut -c2-10 )
 COMMIT=$( node scripts/details.js COMMIT )
