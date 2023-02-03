@@ -1,3 +1,11 @@
+## [7.0.0] - 2023.02.03
+
+### Chore
+
+- Update nodejs to version 18.x
+- Update uWebsockets
+- Update deps
+
 ## [6.2.2] - 2022.12.22
 
 ### Fix
