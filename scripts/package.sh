@@ -121,7 +121,7 @@ function compile {
     echo -e "\tAdding Changelog"
     cp CHANGELOG.md ${DEEPSTREAM_PACKAGE}/doc/CHANGELOG.md
     echo -e "\tAdding Licenses"
-    curl -L https://raw.githubusercontent.com/nodejs/node/v14.x/LICENSE -o ${DEEPSTREAM_PACKAGE}/doc/NODE.LICENSE
+    curl -L https://raw.githubusercontent.com/nodejs/node/v18.x/LICENSE -o ${DEEPSTREAM_PACKAGE}/doc/NODE.LICENSE
     mv build/DEPENDENCIES.LICENSE ${DEEPSTREAM_PACKAGE}/doc/LICENSE
 
     echo "Moving deepstream into package structure at $DEEPSTREAM_PACKAGE"

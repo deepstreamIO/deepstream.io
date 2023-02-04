@@ -71,7 +71,7 @@ jobs:
     - name: Use Node.js
       env:
         DEFAULT_DELAY: 50
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v3
       with:
         node-version: '18.x'
     - run: npm install
@@ -95,7 +95,7 @@ jobs:
     - name: Use Node.js
       env:
         DEFAULT_DELAY: 50
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v3
       with:
         node-version: '18.x'
     - run: npm install
