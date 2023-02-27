@@ -1,4 +1,4 @@
-import { DeepstreamServices } from '@deepstream/types'
+import { DeepstreamServices, NamespacedLogger } from '@deepstream/types'
 import { MonitoringBase } from '../monitoring-base'
 
 interface HTTPMonitoringOptions {
@@ -9,10 +9,12 @@ interface HTTPMonitoringOptions {
 export default class LogMonitoring extends MonitoringBase {
     public description = `Log Monitoring every ${this.pluginOptions.logInterval / 1000}seconds`
     private logInterval!: NodeJS.Timeout
+    private logger: NamespacedLogger
 
     constructor (private pluginOptions: HTTPMonitoringOptions, services: DeepstreamServices) {
         super(services)
-        this.pluginOptions.monitoringKey = pluginOptions.monitoringKey || 'DEEPSTREAM_MONITORING'
+        this.pluginOptions.monitoringKey = pluginOptions.monitoringKey || 'LOG_MONITORING'
+        this.logger = this.services.logger.getNameSpace(this.pluginOptions.monitoringKey)
         this.pluginOptions.logInterval = pluginOptions.logInterval || 15000
     }
 
@@ -20,11 +22,11 @@ export default class LogMonitoring extends MonitoringBase {
         let lastDate = Date.now()
         this.logInterval = setInterval(() => {
             const newDate = Date.now()
-            this.services.logger.info('MONITORING', `Monitoring stats for ${lastDate} to ${newDate}`, {
+            this.logger.info(`Monitoring stats for ${lastDate} to ${newDate}`, JSON.stringify({
                 [this.pluginOptions.monitoringKey]: this.getAndResetMonitoringStats(),
                 from: lastDate,
                 to: newDate
-            })
+            }))
             lastDate = newDate
         }, this.pluginOptions.logInterval)
     }
