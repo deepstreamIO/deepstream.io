@@ -1,3 +1,9 @@
+## [7.0.3] - 2023.03.02
+
+### Fix
+
+- set pkg entrypoint for daemon
+
 ## [7.0.2] - 2023.02.27
 
 ### Fix
