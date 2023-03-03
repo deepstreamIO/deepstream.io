@@ -34,7 +34,7 @@ export class VerticalClusterNode extends DeepstreamPlugin implements DeepstreamC
 
                     const callbacks = this.callbacks.get(TOPIC[message.topic])
                         if (!callbacks || callbacks.size === 0) {
-                            this.services.logger.warn(EVENT.PLUGIN_ERROR, `Received message for unknown topic ${TOPIC[message.topic]}`)
+                            this.services.logger.warn(EVENT.UNKNOWN_ACTION, `Received message for unknown topic ${TOPIC[message.topic]}`)
                             return
                         }
                         callbacks.forEach((callback: Function) => callback(message, fromServer))

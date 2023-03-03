@@ -1,6 +1,6 @@
-// @ts-ignore
 import * as commander from 'commander'
 import * as cluster from 'cluster'
+const numCPUs = require('os').cpus().length
 import { EVENT } from '@deepstream/types'
 
 // work-around for:
@@ -9,15 +9,15 @@ import { EVENT } from '@deepstream/types'
 // tslint:disable-next-line: no-empty-interface
 export interface Command extends commander.Command { }
 
-export const command = (program: Command) => {
+export const verticalCluster = (program: Command) => {
   program
     .command('cluster')
-    .description('start a daemon for deepstream server')
+    .description('start a vertical cluster of deepstream servers')
 
     .option('-c, --config [file]', 'configuration file, parent directory will be used as prefix for other config files')
     .option('-l, --lib-dir [directory]', 'path where to lookup for plugins like connectors and logger')
 
-    .option('--cluster-size <amount>', 'the amount of nodes to run in the cluster')
+    .option('--cluster-size <amount>', 'the amount of nodes to run in the cluster. Defaults to all available cores')
     .option('--host <host>', 'host for the http service')
     .option('--port <port>', 'port for the http service')
     .option('--disable-auth', 'Force deepstream to use "none" auth type')
@@ -30,6 +30,10 @@ function action () {
     // @ts-ignore
     global.deepstreamCLI = this
     const workers = new Set<any>()
+
+    if (!global.deepstreamCLI.clusterSize) {
+      global.deepstreamCLI.clusterSize = numCPUs
+    }
 
     const setupWorkerProcesses = () => {
         console.log('Master cluster setting up ' + global.deepstreamCLI.clusterSize + ' deepstream nodes')
@@ -53,12 +57,13 @@ function action () {
     }
 
     // if it is a master process then call setting up worker process
-    if (cluster.isMaster) {
+    // @ts-ignore
+    if (cluster.isPrimary) {
         setupWorkerProcesses()
     } else {
         const { Deepstream } = require('../src/deepstream.io')
         try {
-          const ds = new Deepstream(null)
+          const ds = new Deepstream({clusterNode: { name: 'vertical' }})
           ds.on(EVENT.FATAL_EXCEPTION, () => process.exit(1))
           ds.start()
           process
@@ -66,7 +71,7 @@ function action () {
               ds.on('stopped', () => process.exit(0))
               ds.stop()
             })
-        } catch (err) {
+        } catch (err: any) {
           console.error(err.toString())
           process.exit(1)
         }
