@@ -35,6 +35,10 @@ function action () {
       global.deepstreamCLI.clusterSize = numCPUs
     }
 
+    if (global.deepstreamCLI.clusterSize && global.deepstreamCLI.clusterSize > numCPUs) {
+      console.warn('Setting more nodes than available cores can decrease performance')
+    }
+
     const setupWorkerProcesses = () => {
         console.log('Master cluster setting up ' + global.deepstreamCLI.clusterSize + ' deepstream nodes')
 
