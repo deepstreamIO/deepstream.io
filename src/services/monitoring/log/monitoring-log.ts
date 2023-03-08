@@ -7,7 +7,7 @@ interface HTTPMonitoringOptions {
 }
 
 export default class LogMonitoring extends MonitoringBase {
-    public description = `Log Monitoring every ${this.pluginOptions.logInterval / 1000}seconds`
+    public description = 'Log Monitoring'
     private logInterval!: NodeJS.Timeout
     private logger: NamespacedLogger
 
@@ -16,6 +16,7 @@ export default class LogMonitoring extends MonitoringBase {
         this.pluginOptions.monitoringKey = pluginOptions.monitoringKey || 'LOG_MONITORING'
         this.logger = this.services.logger.getNameSpace(this.pluginOptions.monitoringKey)
         this.pluginOptions.logInterval = pluginOptions.logInterval || 15000
+        this.description += ` every ${this.pluginOptions.logInterval / 1000} seconds`
     }
 
     public async whenReady (): Promise<void> {

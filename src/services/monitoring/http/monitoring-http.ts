@@ -9,22 +9,20 @@ interface HTTPMonitoringOptions {
 }
 
 export default class HTTPMonitoring extends MonitoringBase {
-    public description = `HTTP Monitoring on ${this.pluginOptions.url}`
+    public description = 'HTTP Monitoring'
     private logger = this.services.logger.getNameSpace('HTTP_MONITORING')
 
     constructor (private pluginOptions: HTTPMonitoringOptions, services: DeepstreamServices) {
         super(services)
-        process.nextTick(() => {
-            if (typeof pluginOptions.url !== 'string') {
-                this.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, 'Missing "url" for HTTP Monitoring')
-            }
-            if (this.pluginOptions.allowOpenPermissions) {
-                this.logger.warn(EVENT.PLUGIN_INITIALIZATION_ERROR, '"allowOpenPermissions" is set. Try not to deploy to production')
-            } else if (!pluginOptions.headerKey || !pluginOptions.headerValue) {
-                this.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, 'Missing "headerKey" and/or "headerValue"')
-            }
-        })
-
+        if (typeof pluginOptions.url !== 'string') {
+            this.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, 'Missing "url" for HTTP Monitoring')
+        }
+        if (this.pluginOptions.allowOpenPermissions) {
+            this.logger.warn(EVENT.PLUGIN_INITIALIZATION_ERROR, '"allowOpenPermissions" is set. Try not to deploy to production')
+        } else if (!pluginOptions.headerKey || !pluginOptions.headerValue) {
+            this.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, 'Missing "headerKey" and/or "headerValue"')
+        }
+        this.description +=  ` on ${this.pluginOptions.url}`
     }
 
     public async whenReady (): Promise<void> {
