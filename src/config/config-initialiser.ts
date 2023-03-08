@@ -28,6 +28,7 @@ import { PinoLogger } from '../services/logger/pino/pino-logger'
 import { DeepstreamIOTelemetry } from '../services/telemetry/deepstreamio-telemetry'
 
 import { NoopMonitoring } from '../services/monitoring/noop-monitoring'
+import { CombineMonitoring } from '../services/monitoring/combine-monitoring'
 import { DistributedLockRegistry } from '../services/lock/distributed-lock-registry'
 import { DistributedStateRegistryFactory } from '../services/cluster-state/distributed-state-registry-factory'
 import { get as getDefaultOptions } from '../default-options'
@@ -103,7 +104,7 @@ export const initialize = function (deepstream: Deepstream, config: DeepstreamCo
     }
   }
   services.logger = handleLogger(config, services)
-  services.monitoring = handleMonitoring(config, services)
+  services.monitoring = handleMonitoringPlugins(config, services)
 
   initialLogs.forEach((log) => {
     switch (log.level) {
@@ -189,6 +190,7 @@ function handleLogger (config: DeepstreamConfig, services: DeepstreamServices): 
     logger.info = logger.info || logger.log.bind(logger, LOG_LEVEL.INFO)
     logger.warn = logger.warn || logger.log.bind(logger, LOG_LEVEL.WARN)
     logger.error = logger.error || logger.log.bind(logger, LOG_LEVEL.ERROR)
+    logger.fatal = logger.fatal || logger.log.bind(logger, LOG_LEVEL.FATAL)
   }
 
   if (commandLineArguments.logLevel !== undefined) {
@@ -305,7 +307,7 @@ function resolvePluginClass (plugin: PluginConfig, type: string, logger: Deepstr
       es6Adaptor = req(requirePath)
       pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
     } catch (error) {
-      logger.fatal(EVENT.CONFIG_ERROR, `Error loading ${type} plugin via path ${requirePath}`)
+      logger.fatal(EVENT.CONFIG_ERROR, `Error loading ${type} plugin via path ${requirePath}: ${error}`)
       // Throw error due to how tests are written
       throw new Error()
     }
@@ -445,7 +447,27 @@ function handlePermissionStrategies (config: DeepstreamConfig, services: Deepstr
   return new PermissionHandlerClass(permission.options, services, config)
 }
 
-function handleMonitoring (config: DeepstreamConfig, services: DeepstreamServices): DeepstreamMonitoring {
+/**
+ * Instantiates the monitoring handlers registered for *config.monitoring.type*
+ *
+ */
+function handleMonitoringPlugins (config: DeepstreamConfig, services: DeepstreamServices): DeepstreamMonitoring {
+  if (!config.monitoring) {
+    config.monitoring = [{
+      type: 'none',
+      options: {}
+    }]
+  } else {
+    // this is in order to make it backwards compatible
+    if (!Array.isArray(config.monitoring)) {
+      config.monitoring = [config.monitoring]
+    }
+  }
+
+  return new CombineMonitoring(config.monitoring.map((monitoringConfig: PluginConfig) => handleMonitoring(monitoringConfig, config, services)))
+}
+
+function handleMonitoring (monitoringConfig: PluginConfig, config: DeepstreamConfig, services: DeepstreamServices): DeepstreamMonitoring {
   let MonitoringClass
 
   const monitoringPlugins = {
@@ -455,15 +477,15 @@ function handleMonitoring (config: DeepstreamConfig, services: DeepstreamService
     log: LogMonitoring
   }
 
-  if (config.monitoring.name || config.monitoring.path) {
-    return new (resolvePluginClass(config.monitoring, 'monitoring', services.logger))(config.monitoring.options, services, config)
-  } else if (config.monitoring.type && (monitoringPlugins as any)[config.monitoring.type]) {
-    MonitoringClass = (monitoringPlugins as any)[config.monitoring.type]
+  if (monitoringConfig.name || monitoringConfig.path) {
+    return new (resolvePluginClass(monitoringConfig, 'monitoring', services.logger))(monitoringConfig.options, services, config)
+  } else if (monitoringConfig.type && (monitoringPlugins as any)[monitoringConfig.type]) {
+    MonitoringClass = (monitoringPlugins as any)[monitoringConfig.type]
   } else {
-    throw new Error(`Unknown monitoring type ${config.monitoring.type}`)
+    throw new Error(`Unknown monitoring type ${monitoringConfig.type}`)
   }
 
-  return new MonitoringClass(config.monitoring.options, services, config)
+  return new MonitoringClass(monitoringConfig.options, services, config)
 }
 
 function handleHTTPServer (config: DeepstreamConfig, services: DeepstreamServices): DeepstreamHTTPService {

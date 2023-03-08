@@ -78,7 +78,7 @@ export class StdOutLogger extends DeepstreamPlugin implements DeepstreamLogger {
    * Logs a line
    */
   private log (logLevel: LOG_LEVEL, namespace: string, event: EVENT, logMessage: string, metaData: MetaData | null = null): void {
-    if (logLevel >= LOG_LEVEL.WARN && this.services) {
+    if (logLevel >= LOG_LEVEL.WARN && this.services && this.services.monitoring) {
       this.services.monitoring.onErrorLog(logLevel, event, logMessage, metaData!)
     }
 

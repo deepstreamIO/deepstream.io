@@ -203,12 +203,19 @@ const subscriptionsOptions = getPluginOptions(
   }
 )
 
-const monitoringOptions = getPluginOptions(
-  'monitoring',
-  ['http', 'log', 'none'],
-  {
+const monitoringOptions = {
+  monitoring: {
+    type: ['array', 'object'],
+    items: {
+      properties: {
+        type: { type: 'string', enum: ['none', 'log', 'http'] },
+        name: { type: 'string', minLength: 1 },
+        path: { type: 'string', minLength: 1 },
+      },
+      options: { type: 'object'}
+    }
   }
-)
+}
 
 const locksOptions = getPluginOptions(
   'locks',
@@ -221,7 +228,7 @@ const locksOptions = getPluginOptions(
 
 const clusterNodeOptions = getPluginOptions(
   'clusterNode',
-  ['default'],
+  ['default', 'vertical'],
   {
   }
 )
