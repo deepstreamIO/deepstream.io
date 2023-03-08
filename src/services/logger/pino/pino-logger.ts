@@ -7,6 +7,7 @@ const DSToPino: { [index: number]: string } = {
     [LOG_LEVEL.ERROR]: 'error',
     [LOG_LEVEL.WARN]: 'warn',
     [LOG_LEVEL.INFO]: 'info',
+    [LOG_LEVEL.OFF]: 'silent',
 }
 
 export class PinoLogger extends DeepstreamPlugin implements DeepstreamLogger {
@@ -37,7 +38,7 @@ export class PinoLogger extends DeepstreamPlugin implements DeepstreamLogger {
     /**
      * Log as info
      */
-    public info (event: string, message?: string, metaData?: any): void {
+    public info (event: EVENT, message?: string, metaData?: any): void {
         if (metaData) {
             this.logger.info({ ...metaData, message, event })
         } else {
@@ -48,7 +49,7 @@ export class PinoLogger extends DeepstreamPlugin implements DeepstreamLogger {
     /**
      * Log as debug
      */
-    public debug (event: string, message?: string, metaData?: any): void {
+    public debug (event: EVENT, message?: string, metaData?: any): void {
         if (metaData) {
             this.logger.debug({ ...metaData, message, event, })
         } else {
@@ -59,7 +60,7 @@ export class PinoLogger extends DeepstreamPlugin implements DeepstreamLogger {
     /**
      * Log as warn
      */
-    public warn (event: string, message?: string, metaData?: any): void {
+    public warn (event: EVENT, message?: string, metaData?: any): void {
         if (metaData) {
             this.logger.warn({ ...metaData, message, event, })
         } else {
@@ -70,7 +71,8 @@ export class PinoLogger extends DeepstreamPlugin implements DeepstreamLogger {
     /**
      * Log as error
      */
-    public error (event: string, message?: string, metaData?: any): void {
+    public error (event: EVENT, message?: string, metaData?: any): void {
+        this.services.monitoring.onErrorLog(LOG_LEVEL.ERROR, event, message!, metaData!)
         if (metaData) {
             this.logger.error({ ...metaData, message, event, })
         } else {
@@ -79,9 +81,10 @@ export class PinoLogger extends DeepstreamPlugin implements DeepstreamLogger {
     }
 
     /**
-     * Log as error
+     * Log as fatal
      */
-    public fatal (event: string, message?: string, metaData?: any): void {
+    public fatal (event: EVENT, message?: string, metaData?: any): void {
+        this.services.monitoring.onErrorLog(LOG_LEVEL.FATAL, event, message!, metaData!)
         if (metaData) {
             this.logger.fatal({ ...metaData, message, event, })
         } else {
