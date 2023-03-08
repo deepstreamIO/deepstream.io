@@ -1,3 +1,10 @@
+## [7.0.4] - 2023.03.08
+
+### Feature
+
+- deepstream cluster CLI enabled in order to run a cluster of deepstream servers on each available processor core
+- combine monitoring: now deepstream accepts an array of monitoring plugins in order to have separate plugins when it comes to monitoring messages, server activity and other custom functionality that might be required. For example you can run the included log monitoring, and an audit plugin that could save to another system/server which users are writing to which records by listening to incoming messages. This allows to create inmediate database replication strategies and so forth.
+
 ## [7.0.3] - 2023.03.02
 
 ### Fix
