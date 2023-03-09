@@ -321,22 +321,22 @@ permission:
     cacheEvacuationInterval: 60000
 
 monitoring:
-  type: none
+  - type: none
 
   # # Allows monitoring stats to be requested via HTTP, useful for polling agents
   # # such as LogStash
-  # type: http
-  # options:
-  #   url: /monitoring
-  #   allowOpenPermissions: false
-  #   headerKey: deepstream-password2
-  #   headerValue: deepstream-secret
+  # - type: http
+  #   options:
+  #     url: /monitoring
+  #     allowOpenPermissions: false
+  #     headerKey: deepstream-password2
+  #     headerValue: deepstream-secret
 
   # # Logs monitoring stats, useful for kibana where you can visualize meta data
-  # type: log
-  # options:
-  #   logInterval: 30000
-  #   monitoringKey: DEEPSTREAM_MONITORING
+  # - type: log
+  #   options:
+  #     logInterval: 30000
+  #     monitoringKey: DEEPSTREAM_MONITORING
 
 # clusterNode:
 #   type: default
