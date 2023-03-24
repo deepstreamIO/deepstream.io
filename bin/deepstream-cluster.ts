@@ -67,7 +67,7 @@ function action () {
     } else {
         const { Deepstream } = require('../src/deepstream.io')
         try {
-          const ds = new Deepstream({clusterNode: { name: 'vertical' }})
+          const ds = new Deepstream(null)
           ds.on(EVENT.FATAL_EXCEPTION, () => process.exit(1))
           ds.start()
           process

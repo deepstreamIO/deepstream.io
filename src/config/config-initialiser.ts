@@ -154,6 +154,11 @@ function handleUUIDProperty (config: DeepstreamConfig): void {
 
 function handleClusterNode  (config: DeepstreamConfig, services: any): DeepstreamClusterNode {
   let ClusterNodeClass = defaultPlugins.get('clusterNode')
+
+  if (commandLineArguments.clusterSize) {
+    config.clusterNode.name = 'vertical'
+  }
+
   if (config.clusterNode.name === 'vertical') {
       ClusterNodeClass = VerticalClusterNode
   } else if (config.clusterNode.name || config.clusterNode.path) {
