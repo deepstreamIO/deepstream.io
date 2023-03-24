@@ -1,3 +1,9 @@
+## [7.0.5] - 2023.03.24
+
+### Fix
+
+- use cli/config file options for cluster
+
 ## [7.0.4] - 2023.03.08
 
 ### Feature
