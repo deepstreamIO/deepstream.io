@@ -17,12 +17,18 @@ interface UWSHTTPInterface extends uws.AppOptions {
     hostUrl: string
 }
 
+interface UserData {
+  url: string,
+  headers: Dictionary<string>,
+  referer: string
+}
+
 export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
   public description: string = 'UWS HTTP Service'
   private server!: uws.TemplatedApp
   private isReady: boolean = false
   private uWS: typeof uws
-  private connections = new Map<uws.WebSocket, SocketWrapper>()
+  private connections = new Map<uws.WebSocket<UserData>, SocketWrapper>()
   private listenSocket!: uws.us_listen_socket
   private isGettingReady: boolean = false
   private maxBackpressure?: number = 1024*1024
@@ -120,8 +126,8 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
   public registerPostPathPrefix<DataInterface> (prefix: string, handler: PostRequestHandler<any>) {
     this.server.post(prefix, (response: uws.HttpResponse, request: uws.HttpRequest) => {
       /* Register error cb */
-      response.onAborted((err) => {
-        console.log('error with post', err)
+      response.onAborted(() => {
+        this.services.logger.warn(EVENT.ERROR, 'post request aborted')
       })
 
       const meta = { headers: this.getHeaders(request), url: request.getUrl() }
@@ -153,8 +159,8 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
   public registerGetPathPrefix (prefix: string, handler: GetRequestHandler) {
     this.server.get(prefix, (response: uws.HttpResponse, request: uws.HttpRequest) => {
       /* Register error cb */
-      response.onAborted((err) => {
-        console.log('error with get', err)
+      response.onAborted(() => {
+        this.services.logger.warn(EVENT.ERROR, 'get request aborted')
       })
 
       if (!this.pluginOptions.allowAllOrigins) {
@@ -172,12 +178,12 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
     })
   }
 
-  public sendWebsocketMessage (socket: uws.WebSocket, message: Uint8Array | string, isBinary: boolean) {
-    const ok = socket.send(message, isBinary)
-    if (!ok) {
+  public sendWebsocketMessage (socket: uws.WebSocket<UserData>, message: Uint8Array | string, isBinary: boolean) {
+    const sentStatus = socket.send(message, isBinary)
+    if (sentStatus === 2) {
       // message was not sent
       const socketWrapper = this.connections.get(socket)!
-      this.services.logger.warn(EVENT.ERROR, `Failed to deliver message to userId ${socketWrapper.userId}, current socket backpressure ${socket.getBufferedAmount()}`)
+      this.services.logger.error(EVENT.ERROR, `Failed to deliver message to userId ${socketWrapper.userId}, current socket backpressure ${socket.getBufferedAmount()}`)
     }
   }
 
@@ -207,28 +213,28 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
           /* Spell these correctly */
           request.getHeader('sec-websocket-key'), request.getHeader('sec-websocket-protocol'), request.getHeader('sec-websocket-extensions'), context)
       },
-      open: (websocket: uws.WebSocket) => {
+      open: (websocket: uws.WebSocket<UserData>) => {
         const handshakeData = {
           remoteAddress: new Uint8Array(websocket.getRemoteAddress()).join('.'),
-          headers: websocket.headers,
-          referer: websocket.referer
+          headers: websocket.getUserData().headers,
+          referer: websocket.getUserData().referer
         }
         const socketWrapper = createSocketWrapper(websocket, handshakeData, this.services, webSocketConnectionEndpoint.wsOptions, webSocketConnectionEndpoint)
         this.connections.set(websocket, socketWrapper)
         webSocketConnectionEndpoint.onConnection.call(webSocketConnectionEndpoint, socketWrapper)
       },
-      message: (ws: uws.WebSocket, message: ArrayBuffer, isBinary: boolean) => {
+      message: (ws: uws.WebSocket<UserData>, message: ArrayBuffer, isBinary: boolean) => {
         const socketWrapper = this.connections.get(ws)!
         const messages = socketWrapper.parseMessage(isBinary ? new Uint8Array(message) : Buffer.from(message).toString())
         if (messages.length > 0) {
           socketWrapper.onMessage(messages)
         }
       },
-      drain: (socket: uws.WebSocket) => {
+      drain: (socket: uws.WebSocket<UserData>) => {
         const socketWrapper = this.connections.get(socket)!
         this.services.logger.info(EVENT.INFO, `Socket backpressure drained for userId ${socketWrapper.userId}, current socket backpressure ${socket.getBufferedAmount()}`)
       },
-      close: (ws: uws.WebSocket) => {
+      close: (ws: uws.WebSocket<UserData>) => {
         webSocketConnectionEndpoint.onSocketClose.call(webSocketConnectionEndpoint, this.connections.get(ws)!)
         this.connections.delete(ws)
       }
