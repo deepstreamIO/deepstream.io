@@ -87,8 +87,10 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
             }
             this.handleOptions(response, request)
           } else {
-            response.writeHeader('Access-Control-Allow-Origin', '*')
-            this.handleOptions(response, request)
+            response.cork(() => {
+              response.writeHeader('Access-Control-Allow-Origin', '*')
+              this.handleOptions(response, request)
+            })
           }
         })
 
@@ -137,7 +139,9 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
           return
         }
       } else {
-        response.writeHeader('Access-Control-Allow-Origin', '*')
+        response.cork(() => {
+          response.writeHeader('Access-Control-Allow-Origin', '*')
+        })
       }
 
       readJson(response, (body: any) => {
@@ -168,7 +172,9 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
           return
         }
       } else {
-        response.writeHeader('Access-Control-Allow-Origin', '*')
+        response.cork(() => {
+          response.writeHeader('Access-Control-Allow-Origin', '*')
+        })
       }
 
       handler(
@@ -232,7 +238,7 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
       },
       drain: (socket: uws.WebSocket<UserData>) => {
         const socketWrapper = this.connections.get(socket)!
-        this.services.logger.info(EVENT.INFO, `Socket backpressure drained for userId ${socketWrapper.userId}, current socket backpressure ${socket.getBufferedAmount()}`)
+        this.services.logger.warn(EVENT.INFO, `Socket backpressure drained for userId ${socketWrapper.userId}, current socket backpressure ${socket.getBufferedAmount()}`)
       },
       close: (ws: uws.WebSocket<UserData>) => {
         webSocketConnectionEndpoint.onSocketClose.call(webSocketConnectionEndpoint, this.connections.get(ws)!)
@@ -242,13 +248,15 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
   }
 
   private terminateResponse (response: uws.HttpResponse, code: number, message?: string) {
-    response.writeHeader('Content-Type', 'text/plain; charset=utf-8')
-    response.writeStatus(code.toString())
-    if (message) {
-      response.end(`${message}\r\n\r\n`)
-    } else {
-      response.end()
-    }
+    response.cork(() => {
+      response.writeHeader('Content-Type', 'text/plain; charset=utf-8')
+      response.writeStatus(code.toString())
+      if (message) {
+        response.end(`${message}\r\n\r\n`)
+      } else {
+        response.end()
+      }
+    })
   }
 
   private sendResponse (
@@ -261,13 +269,15 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
       this.terminateResponse(response, statusCode, err.message)
       return
     }
-    response.writeHeader('Content-Type', 'application/json; charset=utf-8')
-    response.writeStatus(HTTPStatus.OK.toString())
-    if (data) {
-      response.end(`${JSON.stringify(data)}\r\n\r\n`)
-    } else {
-      response.end()
-    }
+    response.cork(() => {
+      response.writeHeader('Content-Type', 'application/json; charset=utf-8')
+      response.writeStatus(HTTPStatus.OK.toString())
+      if (data) {
+        response.end(`${JSON.stringify(data)}\r\n\r\n`)
+      } else {
+        response.end()
+      }
+    })
   }
 
   public getHeaders (req: uws.HttpRequest) {
@@ -329,9 +339,11 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
     }
 
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin
-    response.writeHeader('Access-Control-Allow-Origin', requestOriginUrl)
-    response.writeHeader('Access-Control-Allow-Credentials', 'true')
-    response.writeHeader('Vary', 'Origin')
+    response.cork(() => {
+      response.writeHeader('Access-Control-Allow-Origin', requestOriginUrl)
+      response.writeHeader('Access-Control-Allow-Credentials', 'true')
+      response.writeHeader('Vary', 'Origin')
+    })
 
     return true
   }
@@ -376,9 +388,11 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
      }
    }
 
-   response.writeHeader('Access-Control-Allow-Methods', this.methodsStr)
-   response.writeHeader('Access-Control-Allow-Headers', this.headersStr)
-   this.terminateResponse(response, HTTPStatus.NO_CONTENT)
+   response.cork(() => {
+    response.writeHeader('Access-Control-Allow-Methods', this.methodsStr)
+    response.writeHeader('Access-Control-Allow-Headers', this.headersStr)
+    this.terminateResponse(response, HTTPStatus.NO_CONTENT)
+   })
  }
 }
 
