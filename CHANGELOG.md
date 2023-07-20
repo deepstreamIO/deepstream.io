@@ -1,3 +1,9 @@
+## [7.0.7] - 2023.07.20
+
+### Fix
+
+- Cork uWebsocketjs http responses
+
 ## [7.0.6] - 2023.07.19
 
 ### Task
