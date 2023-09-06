@@ -1,0 +1,9 @@
+**/.git/
+**/.github/
+**/node_modules/
+
+**/Dockerfile
+**/Dockerfile.*
+
+**/.env.*.local
+**/.env.local

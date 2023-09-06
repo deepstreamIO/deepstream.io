@@ -1,4 +1,4 @@
-FROM node:18 as builder
+FROM node:18-alpine as builder
 WORKDIR /app
 # RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
 # RUN unzip awscliv2.zip
@@ -19,11 +19,13 @@ RUN npm install --production \
     @deepstream/logger-winston \
     @deepstream/plugin-aws
 
+RUN npm uninstall --save uWebSockets.js
+
 COPY . .
 
 RUN npm run tsc
 
-FROM node:18
+FROM node:18-alpine
 WORKDIR /usr/local/deepstream
 COPY --from=builder /app/node_modules/ ./node_modules
 COPY --from=builder /app/dist/ .
