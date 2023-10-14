@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package*.json ./
 
 RUN npm ci
-RUN npm install --production \
+RUN npm install --omit=dev \
     @deepstream/cache-redis \
     # @deepstream/cache-memcached \
     # @deepstream/cache-hazelcast \
