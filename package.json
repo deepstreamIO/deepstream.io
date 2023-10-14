@@ -106,7 +106,7 @@
     "ts-essentials": "^7.0.1",
     "ts-node": "^9.0.0",
     "tslint": "^6.1.3",
-    "typescript": "^4.1.2"
+    "typescript": "^4.9.5"
   },
   "author": "deepstreamHub GmbH",
   "license": "MIT",

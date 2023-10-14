@@ -64,7 +64,7 @@ export const validate = (rule: string | boolean, section: ValveSection, type: Ru
     // tslint:disable-next-line
     new Function(rule)
   } catch (e) {
-    return e.toString()
+    return `${e}`
   }
 
   if (!!rule.match(OLD_DATA_REGEXP) && !rulesMap.supportsOldData(type)) {

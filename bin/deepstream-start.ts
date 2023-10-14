@@ -51,7 +51,7 @@ function action () {
         ds.stop()
       })
   } catch (err) {
-    console.error(err.toString())
+    console.error(err?.toString())
     process.exit(1)
   }
 }
