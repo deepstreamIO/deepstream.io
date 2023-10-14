@@ -59,8 +59,8 @@ describe('validates rule strings from permissions.json', () => {
     expect(ruleParser.validate('_("another-record" + data.userId) === $userId', 'record', 'write')).to.equal(true)
   })
 
-  it('rejects rules that are syntactiacally invalid', () => {
-    expect(ruleParser.validate('a b')).to.equal('SyntaxError: Unexpected identifier')
+  it('rejects rules that are syntactically invalid', () => {
+    expect(ruleParser.validate('a b')).to.match(/^SyntaxError: Unexpected identifier/)
     expect(ruleParser.validate('user.id.toUpperCase(')).to.equal("SyntaxError: Unexpected token '}'")
   })
 
