@@ -1,15 +1,9 @@
-import * as commander from 'commander'
+import { Command } from 'commander'
 import { EVENT } from '@deepstream/types'
-
-// work-around for:
-// TS4023: Exported variable 'command' has or is using name 'local.Command'
-// from external module "node_modules/commander/typings/index" but cannot be named.
-// tslint:disable-next-line: no-empty-interface
-export interface Command extends commander.Command { }
 
 export const start = (program: Command) => {
   program
-    .command('start')
+    .command('start', { isDefault: true })
     .description('start a deepstream server')
 
     .option('-c, --config [file]', 'configuration file, parent directory will be used as prefix for other config files')
