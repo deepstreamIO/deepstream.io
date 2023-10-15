@@ -68,7 +68,7 @@
     "mqtt-connection": "^4.0.0",
     "needle": "^2.5.2",
     "pino": "^6.7.0",
-    "source-map-support": "^0.5.19",
+    "source-map-support": "^0.5.21",
     "uuid": "^8.3.2",
     "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.32.0",
     "ws": "^7.5.9"
