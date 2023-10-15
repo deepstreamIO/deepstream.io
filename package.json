@@ -61,7 +61,7 @@
     "chalk": "^4.1.0",
     "commander": "^6.2.0",
     "content-type": "^1.0.4",
-    "glob": "^7.1.6",
+    "glob": "^7.2.3",
     "http-shutdown": "^1.2.2",
     "http-status": "^1.7.0",
     "js-yaml": "^4.1.0",
