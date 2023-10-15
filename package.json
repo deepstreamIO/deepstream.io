@@ -57,7 +57,7 @@
     "@deepstream/types": "^2.3.2",
     "ajv": "^6.12.6",
     "better-ajv-errors": "^0.8.2",
-    "body-parser": "^1.19.0",
+    "body-parser": "^1.20.2",
     "chalk": "^4.1.2",
     "commander": "^11.1.0",
     "content-type": "^1.0.5",
@@ -75,7 +75,7 @@
   },
   "devDependencies": {
     "@deepstream/client": "^6.0.5",
-    "@types/body-parser": "^1.19.0",
+    "@types/body-parser": "^1.19.3",
     "@types/content-type": "^1.1.6",
     "@types/cucumber": "^6.0.1",
     "@types/glob": "^8.1.0",
