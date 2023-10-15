@@ -1,7 +1,7 @@
-import * as pino from 'pino'
+import pino from 'pino'
 import { LOG_LEVEL, DeepstreamPlugin, DeepstreamLogger, DeepstreamConfig, DeepstreamServices, NamespacedLogger, EVENT } from '@deepstream/types'
 
-const DSToPino: { [index: number]: string } = {
+const DSToPino: { [index: number]: pino.LevelWithSilent } = {
     [LOG_LEVEL.DEBUG]: 'debug',
     [LOG_LEVEL.FATAL]: 'fatal',
     [LOG_LEVEL.ERROR]: 'error',
@@ -108,7 +108,7 @@ export class PinoLogger extends DeepstreamPlugin implements DeepstreamLogger {
         }
     }
 
-    private log (logLevel: string, namespace: string, event: EVENT, message: string) {
+    private log (logLevel: pino.LevelWithSilent, namespace: string, event: EVENT, message: string) {
         this.logger[logLevel]({ namespace, event, message })
     }
 }
