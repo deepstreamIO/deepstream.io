@@ -70,7 +70,7 @@
     "pino": "^6.7.0",
     "source-map-support": "^0.5.19",
     "uuid": "^8.3.1",
-    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.31.0",
+    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.32.0",
     "ws": "^7.5.9"
   },
   "devDependencies": {
