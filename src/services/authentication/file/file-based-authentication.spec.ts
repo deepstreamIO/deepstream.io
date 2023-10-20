@@ -1,7 +1,7 @@
 import { spy, assert } from 'sinon'
 import { expect } from 'chai'
 import { FileBasedAuthentication } from './file-based-authentication'
-import { DeepstreamServices, EVENT } from '@deepstream/types'
+import { DeepstreamServices, EVENT, MetaData } from '@deepstream/types'
 import { PromiseDelay } from '../../../utils/utils'
 
 import * as users from '../../../test/config/users.json'
@@ -190,13 +190,33 @@ describe('file based authentication', () => {
   })
 
   describe('errors for invalid configs', () => {
-    const test = async (settings: any, errorMessage: string) => {
+    const test = async (settings: any, errorMessage: string, expectedMetaData?: MetaData) => {
       const services = createServices()
       // tslint:disable-next-line: no-unused-expression
       new FileBasedAuthentication(settings, services)
       await PromiseDelay(10)
       assert.calledOnce(services.logger.fatal)
-      assert.calledWithExactly(services.logger.fatal, EVENT.PLUGIN_INITIALIZATION_ERROR, errorMessage)
+
+      if (!expectedMetaData) {
+        assert.calledWithExactly(services.logger.fatal, EVENT.PLUGIN_INITIALIZATION_ERROR, errorMessage)
+        return
+      }
+
+      assert.calledWith(services.logger.fatal, EVENT.PLUGIN_INITIALIZATION_ERROR, errorMessage)
+      const actualMetadata = services.logger.fatal.getCall(0).args[2]
+      if (expectedMetaData.error) {
+        expect(actualMetadata.error.message).to.equal(expectedMetaData.error.message)
+      }
+
+      const actualMetadataWithoutError = {
+        ...actualMetadata,
+        error: null
+      }
+      const expectedMetadataWithoutError = {
+        ...expectedMetaData,
+        error: null
+      }
+      expect(actualMetadataWithoutError).to.deep.equal(expectedMetadataWithoutError)
     }
 
     it('loads a user config without password field',async () => {
@@ -211,6 +231,21 @@ describe('file based authentication', () => {
         users: emptyUsersMap,
         hash: false
       }, 'no users present in user file')
+    })
+
+    it('loads a user config with invalid hashing parameters', async() => {
+        await test(
+            {
+            users: users,
+            hash: 'md5',
+            iterations: '100',
+            keyLength: 32
+        },
+            'Validating settings failed for file auth',
+            {
+              error: new Error('Invalid type string for iterations')
+            }
+        )
     })
   })
 
