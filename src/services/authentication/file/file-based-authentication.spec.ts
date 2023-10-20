@@ -206,7 +206,7 @@ describe('file based authentication', () => {
       }, 'missing password for userB')
     })
 
-    it('loads a user config without without no users', async() => {
+    it('loads a user config without users', async() => {
       await test({
         users: emptyUsersMap,
         hash: false
