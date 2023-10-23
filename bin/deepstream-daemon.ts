@@ -1,12 +1,6 @@
 // @ts-ignore
 import * as dsDaemon from '../src/service/daemon'
-import * as commander from 'commander'
-
-// work-around for:
-// TS4023: Exported variable 'command' has or is using name 'local.Command'
-// from external module "node_modules/commander/typings/index" but cannot be named.
-// tslint:disable-next-line: no-empty-interface
-export interface Command extends commander.Command { }
+import { Command } from 'commander'
 
 export const daemon = (program: Command) => {
   program

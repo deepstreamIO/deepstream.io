@@ -68,27 +68,27 @@ function compile {
     echo '{ "name": "TEMP" }' > package.json
 
     echo "Adding uWebSockets.js to libs"
-    npm install --production --global-style uWebSockets.js@${UWS_VERSION}
+    npm install --omit=dev --install-strategy=shallow uWebSockets.js@${UWS_VERSION}
 
     echo "Adding cache plugins"
-    npm install --production --global-style \
+    npm install --omit=dev --install-strategy=shallow \
         @deepstream/cache-redis \
         @deepstream/cache-memcached \
         # @deepstream/cache-hazelcast
 
     echo "Adding cluster plugins"
-    npm install --production --global-style \
+    npm install --omit=dev --install-strategy=shallow \
         @deepstream/clusternode-redis
 
     echo "Adding storage plugins"
-    npm install --production --global-style \
+    npm install --omit=dev --install-strategy=shallow \
         @deepstream/storage-mongodb \
         @deepstream/storage-rethinkdb \
         @deepstream/storage-elasticsearch \
         @deepstream/storage-postgres
 
     echo "Adding logger plugins"
-    npm install --production --global-style \
+    npm install --omit=dev --install-strategy=shallow \
         @deepstream/logger-winston
 
     mv node_modules/* .

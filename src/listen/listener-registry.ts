@@ -553,7 +553,7 @@ export class ListenerRegistry implements SubscriptionListener {
         action: this.actions.INVALID_LISTEN_REGEX,
         name: message.name
       })
-      this.services.logger.warn(this.actions[this.actions.INVALID_LISTEN_REGEX], e.toString(), this.metaData)
+      this.services.logger.warn(this.actions[this.actions.INVALID_LISTEN_REGEX], `${e}`, this.metaData)
       return null
     }
   }

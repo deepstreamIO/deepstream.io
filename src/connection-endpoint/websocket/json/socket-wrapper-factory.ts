@@ -35,7 +35,10 @@ export class JSONSocketWrapper extends WSSocketWrapper<string> {
       }
       return true
     } catch (e) {
-      return e
+      if (e instanceof Error) {
+        return e
+      }
+      return new Error(`Unknown error: ${e}`)
     }
   }
 }

@@ -41,7 +41,7 @@ npm install
 npm run tsc # Generate dist
 rm -rf node_modules
 
-npm install --production
+npm install --omit=dev
 echo 'Installed NPM Dependencies'
 
 if [ $PLATFORM == 'mac' ]; then

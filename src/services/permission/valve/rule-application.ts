@@ -93,7 +93,7 @@ export default class RuleApplication {
       result = this.params.rule.fn.apply({}, args)
     } catch (error) {
       if (this.isReady()) {
-        this.onRuleError(error)
+        this.onRuleError(`${error}`)
         return
       }
     }

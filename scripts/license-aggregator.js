@@ -19,7 +19,7 @@ if (path.basename(process.cwd()) === 'scripts') {
   process.exit(0)
 }
 
-child_process.execSync('npm list --production --json > licenses.json')
+child_process.execSync('npm list --omit=dev --json > licenses.json')
 const mainModule = require('../licenses.json')
 
 const moduleNames = []

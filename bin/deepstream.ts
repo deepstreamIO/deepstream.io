@@ -24,7 +24,3 @@ verticalCluster(program)
 nginx(program)
 
 program.parse(process.argv)
-
-if (program.rawArgs.length <= 2) {
-  program.emit('command:start')
-}
