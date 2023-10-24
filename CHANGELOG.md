@@ -1,3 +1,13 @@
+## [7.0.8] - 2023.10.23
+
+### Task
+
+- multi arch docker image builds. Thanks @daanh432
+
+### Chore
+
+- update deps. Thanks @hugojosefson
+
 ## [7.0.7] - 2023.07.20
 
 ### Fix
