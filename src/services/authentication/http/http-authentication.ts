@@ -99,10 +99,16 @@ export class HttpAuthentication extends DeepstreamPlugin implements DeepstreamAu
 
       if (this.settings.permittedStatusCodes.indexOf(response.statusCode) === -1) {
         if (this.settings.reportInvalidParameters) {
-          if (typeof response.body === 'string' && response.body) {
-            callback({ isValid: false, clientData: { error: response.body }})
+          if (response.body) {
+            if (typeof response.body === 'string') {
+              callback({ isValid: false, clientData: { error: response.body }})
+            } else if (typeof response.body === 'object' && Object.keys(response.body).length > 0) {
+              callback({ isValid: false, clientData: {...response.body} })
+            } else {
+              callback({ isValid: false })
+            }
           } else {
-            callback({ isValid: false, ...response.body })
+            callback({ isValid: false })
           }
         } else {
           callback(null)
