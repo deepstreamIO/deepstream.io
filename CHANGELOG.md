@@ -1,3 +1,9 @@
+## [7.0.10] - 2024.03.06
+
+### Task
+
+- Separate docker ubuntu amd and arm releases due to intermitent build failures in arm. See https://github.com/nodejs/docker-node/issues/1335
+
 ## [7.0.9] - 2024.03.04
 
 ### Fix
