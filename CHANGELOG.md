@@ -1,3 +1,11 @@
+## [8.0.0] - 2025.04.26
+
+### Chore
+
+- Update nodejs to version 22.x
+- Update uWebsockets
+- Update deps
+
 ## [7.0.10] - 2024.03.06
 
 ### Task
