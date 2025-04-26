@@ -1,4 +1,4 @@
-FROM node:18 as builder
+FROM node:22 as builder
 WORKDIR /app
 
 COPY package*.json ./
@@ -20,7 +20,7 @@ COPY . .
 
 RUN npm run tsc
 
-FROM node:18
+FROM node:22
 WORKDIR /usr/local/deepstream
 COPY --from=builder /app/node_modules/ ./node_modules
 COPY --from=builder /app/dist/ .

@@ -27,7 +27,7 @@ jobs:
     # Setup .npmrc file to publish to npm
     - uses: actions/setup-node@v3
       with:
-        node-version: '18.x'
+        node-version: '22.x'
         registry-url: 'https://registry.npmjs.org'
     - run: npm install
     - run: npm run lint
@@ -49,7 +49,7 @@ jobs:
         DEFAULT_DELAY: 50
       uses: actions/setup-node@v3
       with:
-        node-version: '18.x'
+        node-version: '22.x'
     - run: npm install
     - run: npm run lint
     - run: npm run test
@@ -73,7 +73,7 @@ jobs:
         DEFAULT_DELAY: 50
       uses: actions/setup-node@v3
       with:
-        node-version: '18.x'
+        node-version: '22.x'
     - run: npm install
     - run: npm run lint
     - run: npm run test
@@ -97,7 +97,7 @@ jobs:
         DEFAULT_DELAY: 50
       uses: actions/setup-node@v3
       with:
-        node-version: '18.x'
+        node-version: '22.x'
     - run: npm install
     - run: npm run lint
     - run: npm run test

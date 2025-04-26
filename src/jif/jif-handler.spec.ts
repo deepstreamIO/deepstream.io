@@ -37,7 +37,7 @@ describe('JIF Handler', () => {
 
       results.forEach((result, i) => {
         expect(result.success).to.equal(false, i.toString())
-        expect(result.error).to.match(/should be object/, i.toString())
+        expect(result.error).to.match(/must be object/, i.toString())
       })
     })
 

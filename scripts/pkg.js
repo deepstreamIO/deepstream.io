@@ -1,4 +1,4 @@
-const { exec } = require('pkg')
+const { exec } = require('@yao-pkg/pkg')
 
 const LTS = process.env.LTS
 let OS = process.env.OS

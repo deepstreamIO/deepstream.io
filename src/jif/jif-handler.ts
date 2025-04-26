@@ -9,7 +9,7 @@ import {
   ACTIONS
 } from '../constants'
 
-import * as Ajv from 'ajv'
+import {Ajv} from 'ajv'
 
 import {
   getUid,
@@ -19,7 +19,7 @@ import {
 import { jifSchema } from './jif-schema'
 import { JifMessage, DeepstreamServices, EVENT } from '@deepstream/types'
 
-const ajv = new Ajv()
+const ajv = new Ajv({strict: false})
 
 const validateJIF: any = ajv.compile(jifSchema)
 

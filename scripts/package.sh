@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-LTS_VERSION="18"
+LTS_VERSION="22"
 NODE_VERSION=$( node --version )
 NODE_VERSION_WITHOUT_V=$( echo ${NODE_VERSION} | cut -c2-10 )
 COMMIT=$( node scripts/details.js COMMIT )
@@ -121,7 +121,7 @@ function compile {
     echo -e "\tAdding Changelog"
     cp CHANGELOG.md ${DEEPSTREAM_PACKAGE}/doc/CHANGELOG.md
     echo -e "\tAdding Licenses"
-    curl -L https://raw.githubusercontent.com/nodejs/node/v18.x/LICENSE -o ${DEEPSTREAM_PACKAGE}/doc/NODE.LICENSE
+    curl -L https://raw.githubusercontent.com/nodejs/node/v22.x/LICENSE -o ${DEEPSTREAM_PACKAGE}/doc/NODE.LICENSE
     mv build/DEPENDENCIES.LICENSE ${DEEPSTREAM_PACKAGE}/doc/LICENSE
 
     echo "Moving deepstream into package structure at $DEEPSTREAM_PACKAGE"

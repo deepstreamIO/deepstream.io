@@ -154,7 +154,7 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
         this.terminateResponse(
           response,
           code,
-          HTTPStatus[`${code}_MESSAGE`] as string
+          HTTPStatus[`${code}_MESSAGE` as keyof typeof HTTPStatus] as string
         )
       }, this.pluginOptions.maxMessageSize)
     })

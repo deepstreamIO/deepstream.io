@@ -10,13 +10,13 @@ jobs:
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v3
       with:
-        node-version: '18.x'
+        node-version: '22.x'
     - run: npm install
     - run: npm run lint
     - run: npm run test:all:coverage
     - run: npm run e2e:uws
     - name: Coveralls
-      if: startsWith(matrix.node-version, '18.')
+      if: startsWith(matrix.node-version, '22.')
       uses: coverallsapp/github-action@master
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}

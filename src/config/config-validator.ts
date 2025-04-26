@@ -1,4 +1,5 @@
-import * as Ajv from 'ajv'
+import {Ajv} from 'ajv'
+import addFormat from 'ajv-formats'
 import betterAjvErrors from 'better-ajv-errors'
 
 import { LOG_LEVEL } from '@deepstream/types'
@@ -286,7 +287,8 @@ const schema = {
 }
 
 export const validate = function (config: Object): void {
-  const ajv = new Ajv({ jsonPointers: true, allErrors: true })
+  const ajv = new Ajv({ allErrors: true, strict: false })
+  addFormat(ajv)
   const validator = ajv.compile(schema)
   const valid = validator(config)
 
