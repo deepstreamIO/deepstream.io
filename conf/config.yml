@@ -9,8 +9,8 @@ dependencyInitializationTimeout: 5000
 #libDir: ../lib
 # Exit the process a fatal error occurs, like losing a cache connection
 exitOnFatalError: false
-# Log messages with this level and above. Valid levels are DEBUG, INFO, WARN, ERROR, OFF
-logLevel: INFO
+# Log messages with this level and above. Valid levels are 0 (DEBUG), 1 (INFO), 2 (WARN), 3 (ERROR), 4 (FATAL), 100(OFF)
+logLevel: 0
 
 # This disables specific feature in DS, which is a more performant way
 # than disabling via permissions and is also how telemetry figures out
@@ -222,8 +222,8 @@ logger:
   # log using json, this supports meta objects
   # name: pino
   # options:
-  # # value of logLevel (line 4) will always overwrite this value
-  #   logLevel: INFO
+  # # this value will always overwrite value of logLevel (line 4)
+  #   logLevel: 0
 
   # name: winston
   # options:

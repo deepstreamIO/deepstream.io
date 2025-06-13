@@ -5,13 +5,13 @@ import betterAjvErrors from 'better-ajv-errors'
 import { LOG_LEVEL } from '@deepstream/types'
 
 const LogLevelValidation = {
-  type: ['string', 'integer'],
+  type: ['integer'],
   enum: [
-    'DEBUG', LOG_LEVEL.DEBUG,
-    'INFO', LOG_LEVEL.INFO,
-    'WARN', LOG_LEVEL.WARN,
-    'ERROR', LOG_LEVEL.ERROR,
-    'OFF', LOG_LEVEL.OFF
+    LOG_LEVEL.DEBUG,
+    LOG_LEVEL.INFO,
+    LOG_LEVEL.WARN,
+    LOG_LEVEL.ERROR,
+    LOG_LEVEL.OFF
   ]
 }
 
@@ -190,9 +190,10 @@ const loggerOptions = getPluginOptions(
   'logger',
   ['default', 'json'],
   {
-    colors: { type: 'boolean' },
-    logLevel: LogLevelValidation,
-    options: { type: 'object' }
+    options: {
+      colors: { type: 'boolean' },
+      logLevel: LogLevelValidation
+     }
   }
 )
 
