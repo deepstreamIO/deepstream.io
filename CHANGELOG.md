@@ -1,3 +1,13 @@
+## [9.0.0] - 2025.06.13
+
+### Fix - Breaking change
+
+- The log level namig logic was not being implemented properly. logLevels as String where not converted to numbers, therefore those levels where not being properly enforced. The simplest path is just to use logLevels as numbers everywhere. This is a breaking change because config files with log levels as string will error at the config validation stage.
+
+### Chore
+
+- Update deps
+
 ## [8.0.0] - 2025.04.26
 
 ### Chore
