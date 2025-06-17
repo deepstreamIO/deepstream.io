@@ -1,3 +1,9 @@
+## [9.0.1] - 2025.06.17
+
+### Feature
+
+Enable pino logger options thus making it possible to use transports
+
 ## [9.0.0] - 2025.06.13
 
 ### Fix - Breaking change
