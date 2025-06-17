@@ -1,4 +1,4 @@
-import pino from 'pino'
+import pino, { LoggerOptions } from 'pino'
 import { LOG_LEVEL, DeepstreamPlugin, DeepstreamLogger, DeepstreamConfig, DeepstreamServices, NamespacedLogger, EVENT } from '@deepstream/types'
 
 const DSToPino: { [index: number]: pino.LevelWithSilent } = {
@@ -12,10 +12,11 @@ const DSToPino: { [index: number]: pino.LevelWithSilent } = {
 
 export class PinoLogger extends DeepstreamPlugin implements DeepstreamLogger {
     public description = 'Pino Logger'
-    private logger: pino.Logger = pino()
+    private logger: pino.Logger
 
-    constructor (pluginOptions: {}, private services: DeepstreamServices, config: DeepstreamConfig) {
+    constructor (pluginOptions: LoggerOptions, private services: DeepstreamServices, config: DeepstreamConfig) {
         super()
+        this.logger = pino(pluginOptions)
         this.setLogLevel(config.logLevel)
     }
 
