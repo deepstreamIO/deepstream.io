@@ -6,15 +6,15 @@ import * as fileUtils from '../../../config/file-utils'
 import * as HTTPStatus from 'http-status'
 
 interface UWSHTTPInterface extends uws.AppOptions {
-    healthCheckPath: string,
-    host: string,
-    port: number,
-    allowAllOrigins: boolean,
-    origins?: string[],
-    maxMessageSize: number,
-    maxBackpressure?: number,
-    headers: string[],
-    hostUrl: string
+  healthCheckPath: string,
+  host: string,
+  port: number,
+  allowAllOrigins: boolean,
+  origins?: string[],
+  maxMessageSize: number,
+  maxBackpressure?: number,
+  headers: string[],
+  hostUrl: string
 }
 
 interface UserData {
@@ -31,7 +31,7 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
   private connections = new Map<uws.WebSocket<UserData>, SocketWrapper>()
   private listenSocket!: uws.us_listen_socket
   private isGettingReady: boolean = false
-  private maxBackpressure?: number = 1024*1024
+  private maxBackpressure?: number = 1024 * 1024
   private methods: string[] = ['GET', 'POST', 'OPTIONS']
   private methodsStr: string = this.methods.join(', ')
   private headers: string[] = ['X-Requested-With', 'X-HTTP-Method-Override', 'Content-Type', 'Accept']
@@ -42,9 +42,9 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
     super()
 
     if (this.pluginOptions.allowAllOrigins === false) {
-        if (this.pluginOptions.origins?.length === 0) {
-          this.services.logger.fatal(EVENT.INVALID_CONFIG_DATA, 'HTTP allowAllOrigins set to false but no origins provided')
-        }
+      if (this.pluginOptions.origins?.length === 0) {
+        this.services.logger.fatal(EVENT.INVALID_CONFIG_DATA, 'HTTP allowAllOrigins set to false but no origins provided')
+      }
     }
     // set maxBackpressure if defined, default is 1024*1024
     if (this.pluginOptions.maxBackpressure) {
@@ -72,7 +72,7 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
 
   public async whenReady (): Promise<void> {
     if (this.isReady || this.isGettingReady) {
-        return
+      return
     }
     this.isGettingReady = true
     return new Promise((resolve) => {
@@ -81,17 +81,17 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
         this.listenSocket = token
         // handle options requests
         this.server.options('/*', (response: uws.HttpResponse, request: uws.HttpRequest) => {
-          const baseHeaders: Dictionary<string> = {};
+          const baseHeaders: Dictionary<string> = {}
           if (!this.pluginOptions.allowAllOrigins) {
-            const corsValidationHeaders = this.getVerifiedOriginHeaders(response, request);
+            const corsValidationHeaders = this.getVerifiedOriginHeaders(response, request)
             if (!corsValidationHeaders) { // Verification failed and response terminated
-              return;
+              return
             }
-            Object.assign(baseHeaders, corsValidationHeaders);
-            this.handleOptions(response, request, baseHeaders);
+            Object.assign(baseHeaders, corsValidationHeaders)
+            this.handleOptions(response, request, baseHeaders)
           } else {
-            baseHeaders['Access-Control-Allow-Origin'] = '*';
-            this.handleOptions(response, request, baseHeaders);
+            baseHeaders['Access-Control-Allow-Origin'] = '*'
+            this.handleOptions(response, request, baseHeaders)
           }
         })
 
@@ -138,16 +138,16 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
 
       const meta = { headers: this.getHeaders(request), url: request.getUrl() }
 
-      const accumulatedHeaders: Dictionary<string> = {};
+      const accumulatedHeaders: Dictionary<string> = {}
 
       if (!this.pluginOptions.allowAllOrigins) {
-        const corsHeaders = this.getVerifiedOriginHeaders(response, request);
+        const corsHeaders = this.getVerifiedOriginHeaders(response, request)
         if (!corsHeaders) {
-          return; // Response already terminated
+          return // Response already terminated
         }
-        Object.assign(accumulatedHeaders, corsHeaders);
+        Object.assign(accumulatedHeaders, corsHeaders)
       } else {
-        accumulatedHeaders['Access-Control-Allow-Origin'] = '*';
+        accumulatedHeaders['Access-Control-Allow-Origin'] = '*'
       }
 
       readJson(response, (body: any) => {
@@ -174,23 +174,23 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
         this.services.logger.warn(EVENT.ERROR, 'get request aborted')
       })
 
-      const accumulatedHeaders: Dictionary<string> = {};
+      const accumulatedHeaders: Dictionary<string> = {}
 
       if (!this.pluginOptions.allowAllOrigins) {
-        const corsHeaders = this.getVerifiedOriginHeaders(response, request);
+        const corsHeaders = this.getVerifiedOriginHeaders(response, request)
         if (!corsHeaders) {
-          return; // Response already terminated
+          return // Response already terminated
         }
-        Object.assign(accumulatedHeaders, corsHeaders);
+        Object.assign(accumulatedHeaders, corsHeaders)
       } else {
-        accumulatedHeaders['Access-Control-Allow-Origin'] = '*';
+        accumulatedHeaders['Access-Control-Allow-Origin'] = '*'
       }
 
       handler(
         { headers: this.getHeaders(request), url: request.getUrl() },
         // Ensure the bound sendResponse uses these accumulatedHeaders
         (err, data) => this.sendResponse(response, err, data, accumulatedHeaders)
-      );
+      )
     })
   }
 
@@ -220,12 +220,12 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
       maxBackpressure: this.maxBackpressure,
       idleTimeout,
       upgrade: (response: uws.HttpResponse, request: uws.HttpRequest, context: any) => {
-          /* This immediately calls open handler, you must not use response after this call */
-          response.upgrade({
-              url: request.getUrl(),
-              headers: this.getHeaders(request),
-              referer: request.getHeader('referer')
-          },
+        /* This immediately calls open handler, you must not use response after this call */
+        response.upgrade({
+          url: request.getUrl(),
+          headers: this.getHeaders(request),
+          referer: request.getHeader('referer')
+        },
           /* Spell these correctly */
           request.getHeader('sec-websocket-key'), request.getHeader('sec-websocket-protocol'), request.getHeader('sec-websocket-extensions'), context)
       },
@@ -368,61 +368,61 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
       'Access-Control-Allow-Origin': requestOriginUrl,
       'Access-Control-Allow-Credentials': 'true', // Typically needed with specific origins
       'Vary': 'Origin' // Good practice when Access-Control-Allow-Origin is dynamic
-    };
+    }
   }
 
   private handleOptions (response: uws.HttpResponse, request: uws.HttpRequest, baseCorsHeaders: Dictionary<string>): void {
-   const allHeadersForResponse = { ...baseCorsHeaders };
+    const allHeadersForResponse = { ...baseCorsHeaders }
 
-   const requestMethod = request.getHeader('access-control-request-method') as string | undefined
-   if (!requestMethod) {
-     this.terminateResponse(
-       response,
-       HTTPStatus.BAD_REQUEST,
-       'Missing header "Access-Control-Request-Method".',
-       allHeadersForResponse // Pass along already determined CORS headers
-     )
-     return
-   }
-   if (this.methods.indexOf(requestMethod) === -1) {
-     this.terminateResponse(
-       response,
-       HTTPStatus.FORBIDDEN,
-       `Method ${requestMethod} is forbidden. Supported methods: ${this.methodsStr}`,
-       allHeadersForResponse
-     )
-     return
-   }
+    const requestMethod = request.getHeader('access-control-request-method') as string | undefined
+    if (!requestMethod) {
+      this.terminateResponse(
+        response,
+        HTTPStatus.BAD_REQUEST,
+        'Missing header "Access-Control-Request-Method".',
+        allHeadersForResponse // Pass along already determined CORS headers
+      )
+      return
+    }
+    if (this.methods.indexOf(requestMethod) === -1) {
+      this.terminateResponse(
+        response,
+        HTTPStatus.FORBIDDEN,
+        `Method ${requestMethod} is forbidden. Supported methods: ${this.methodsStr}`,
+        allHeadersForResponse
+      )
+      return
+    }
 
-   const requestHeadersRaw = request.getHeader('access-control-request-headers') as string | undefined
-   if (!requestHeadersRaw) {
+    const requestHeadersRaw = request.getHeader('access-control-request-headers') as string | undefined
+    if (!requestHeadersRaw) {
       // Some browsers might not send this for simple requests, but for preflight it's expected.
       // Depending on strictness, this could be an error or allowed.
       // For now, let's assume it's required for a preflight OPTIONS.
-     this.terminateResponse(
-       response,
-       HTTPStatus.BAD_REQUEST,
-       'Missing header "Access-Control-Request-Headers".'
-     )
-     return
-   }
-   const requestHeaders = requestHeadersRaw.split(',')
-   for (let i = 0; i < requestHeaders.length; i++) {
-     if (this.headersLower.indexOf(requestHeaders[i].trim().toLowerCase()) === -1) {
-       this.terminateResponse(
-         response,
-         HTTPStatus.FORBIDDEN,
-         `Header ${requestHeaders[i]} is forbidden. Supported headers: ${this.headersStr}`,
-         allHeadersForResponse
-       )
-       return
-     }
-   }
+      this.terminateResponse(
+        response,
+        HTTPStatus.BAD_REQUEST,
+        'Missing header "Access-Control-Request-Headers".'
+      )
+      return
+    }
+    const requestHeaders = requestHeadersRaw.split(',')
+    for (let i = 0; i < requestHeaders.length; i++) {
+      if (this.headersLower.indexOf(requestHeaders[i].trim().toLowerCase()) === -1) {
+        this.terminateResponse(
+          response,
+          HTTPStatus.FORBIDDEN,
+          `Header ${requestHeaders[i]} is forbidden. Supported headers: ${this.headersStr}`,
+          allHeadersForResponse
+        )
+        return
+      }
+    }
 
-   allHeadersForResponse['Access-Control-Allow-Methods'] = this.methodsStr;
-   allHeadersForResponse['Access-Control-Allow-Headers'] = this.headersStr;
-   this.terminateResponse(response, HTTPStatus.NO_CONTENT, undefined, allHeadersForResponse);
- }
+    allHeadersForResponse['Access-Control-Allow-Methods'] = this.methodsStr
+    allHeadersForResponse['Access-Control-Allow-Headers'] = this.headersStr
+    this.terminateResponse(response, HTTPStatus.NO_CONTENT, undefined, allHeadersForResponse)
+  }
 }
 
 /* Helper function for reading a posted JSON body */
