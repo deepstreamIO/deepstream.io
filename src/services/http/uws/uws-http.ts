@@ -81,19 +81,23 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
         this.listenSocket = token
         // handle options requests
         this.server.options('/*', (response: uws.HttpResponse, request: uws.HttpRequest) => {
+          const baseHeaders: Dictionary<string> = {};
           if (!this.pluginOptions.allowAllOrigins) {
-            if (!this.verifyOrigin(response, request)) {
-              return
+            const corsValidationHeaders = this.getVerifiedOriginHeaders(response, request);
+            if (!corsValidationHeaders) { // Verification failed and response terminated
+              return;
             }
-            this.handleOptions(response, request)
+            Object.assign(baseHeaders, corsValidationHeaders);
+            this.handleOptions(response, request, baseHeaders);
           } else {
-            response.cork(() => {
-              response.writeHeader('Access-Control-Allow-Origin', '*')
-              this.handleOptions(response, request)
-            })
+            baseHeaders['Access-Control-Allow-Origin'] = '*';
+            this.handleOptions(response, request, baseHeaders);
           }
         })
 
+        // Health check path uses GET, so CORS headers will be applied by registerGetPathPrefix
+        // The handler calls response(null), which will use sendResponse.
+        // sendResponse will correctly order writeStatus and add Content-Type: application/json.
         this.registerGetPathPrefix(this.pluginOptions.healthCheckPath, (meta: DeepstreamHTTPMeta, response: DeepstreamHTTPResponse) => {
           response(null)
         })
@@ -134,27 +138,30 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
 
       const meta = { headers: this.getHeaders(request), url: request.getUrl() }
 
+      const accumulatedHeaders: Dictionary<string> = {};
+
       if (!this.pluginOptions.allowAllOrigins) {
-        if (!this.verifyOrigin(response, request)) {
-          return
+        const corsHeaders = this.getVerifiedOriginHeaders(response, request);
+        if (!corsHeaders) {
+          return; // Response already terminated
         }
+        Object.assign(accumulatedHeaders, corsHeaders);
       } else {
-        response.cork(() => {
-          response.writeHeader('Access-Control-Allow-Origin', '*')
-        })
+        accumulatedHeaders['Access-Control-Allow-Origin'] = '*';
       }
 
       readJson(response, (body: any) => {
         handler(
           body,
           meta,
-          this.sendResponse.bind(this, response)
+          (err, data) => this.sendResponse(response, err, data, accumulatedHeaders)
         )
       }, (code: number) => {
         this.terminateResponse(
           response,
           code,
-          HTTPStatus[`${code}_MESSAGE` as keyof typeof HTTPStatus] as string
+          HTTPStatus[`${code}_MESSAGE` as keyof typeof HTTPStatus] as string,
+          accumulatedHeaders
         )
       }, this.pluginOptions.maxMessageSize)
     })
@@ -167,20 +174,23 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
         this.services.logger.warn(EVENT.ERROR, 'get request aborted')
       })
 
+      const accumulatedHeaders: Dictionary<string> = {};
+
       if (!this.pluginOptions.allowAllOrigins) {
-        if (!this.verifyOrigin(response, request)) {
-          return
+        const corsHeaders = this.getVerifiedOriginHeaders(response, request);
+        if (!corsHeaders) {
+          return; // Response already terminated
         }
+        Object.assign(accumulatedHeaders, corsHeaders);
       } else {
-        response.cork(() => {
-          response.writeHeader('Access-Control-Allow-Origin', '*')
-        })
+        accumulatedHeaders['Access-Control-Allow-Origin'] = '*';
       }
 
       handler(
         { headers: this.getHeaders(request), url: request.getUrl() },
-        this.sendResponse.bind(this, response)
-      )
+        // Ensure the bound sendResponse uses these accumulatedHeaders
+        (err, data) => this.sendResponse(response, err, data, accumulatedHeaders)
+      );
     })
   }
 
@@ -247,13 +257,21 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
     } as any)
   }
 
-  private terminateResponse (response: uws.HttpResponse, code: number, message?: string) {
+  private terminateResponse (response: uws.HttpResponse, code: number, message?: string, additionalHeaders: Dictionary<string> = {}) {
     response.cork(() => {
-      response.writeHeader('Content-Type', 'text/plain; charset=utf-8')
       response.writeStatus(code.toString())
-      if (message) {
+      for (const key in additionalHeaders) {
+        if (additionalHeaders.hasOwnProperty(key)) {
+          response.writeHeader(key, additionalHeaders[key])
+        }
+      }
+      // Only set Content-Type if there's a message body, and not for 204/304
+      if (message && code !== HTTPStatus.NO_CONTENT) {
+        response.writeHeader('Content-Type', 'text/plain; charset=utf-8')
         response.end(`${message}\r\n\r\n`)
       } else {
+        // For 204 NO_CONTENT or other cases without a message, just end.
+        // uWS requires end() to be called.
         response.end()
       }
     })
@@ -262,16 +280,23 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
   private sendResponse (
     response: uws.HttpResponse,
     err: { statusCode: number, message: string } | null,
-    data: { result: string, body: object }
+    data: { result: string, body: object },
+    additionalHeaders: Dictionary<string> = {}
   ): void {
     if (err) {
       const statusCode = err.statusCode || HTTPStatus.BAD_REQUEST
-      this.terminateResponse(response, statusCode, err.message)
+      this.terminateResponse(response, statusCode, err.message, additionalHeaders)
       return
     }
+
     response.cork(() => {
-      response.writeHeader('Content-Type', 'application/json; charset=utf-8')
       response.writeStatus(HTTPStatus.OK.toString())
+      for (const key in additionalHeaders) {
+        if (additionalHeaders.hasOwnProperty(key)) {
+          response.writeHeader(key, additionalHeaders[key])
+        }
+      }
+      response.writeHeader('Content-Type', 'application/json; charset=utf-8')
       if (data) {
         response.end(`${JSON.stringify(data)}\r\n\r\n`)
       } else {
@@ -279,7 +304,6 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
       }
     })
   }
-
   public getHeaders (req: uws.HttpRequest) {
     const headers: Dictionary<string> = {}
     for (const wantedHeader of this.pluginOptions.headers) {
@@ -287,7 +311,6 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
     }
     return headers
   }
-
   private getSLLParams (options: any) {
     if (!options.ssl) {
       return null
@@ -301,7 +324,6 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
       if (!cert_file_name) {
         this.services.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, 'Must also include ssl cert in order to use SSL')
       }
-
       return {
         key_file_name,
         cert_file_name,
@@ -312,13 +334,14 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
     return null
   }
 
-  private verifyOrigin (response: uws.HttpResponse, request: uws.HttpRequest): boolean {
+  // This method now either terminates the response or returns headers for the caller to use.
+  private getVerifiedOriginHeaders (response: uws.HttpResponse, request: uws.HttpRequest): Dictionary<string> | null {
     const requestOriginUrl = request.getHeader('origin') as string || request.getHeader('referer') as string
     const requestHostUrl = request.getHeader('host')
 
     if (this.pluginOptions.hostUrl && requestHostUrl !== this.pluginOptions.hostUrl) {
       this.terminateResponse(response, HTTPStatus.FORBIDDEN, 'Forbidden Host.')
-      return false
+      return null
     }
 
     if (this.pluginOptions.origins!.indexOf(requestOriginUrl) === -1) {
@@ -326,35 +349,38 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
         this.terminateResponse(
           response,
           HTTPStatus.FORBIDDEN,
-          'CORS is configured for this. All requests must set a valid "Origin" header.'
+          'CORS is configured for this. All requests must set a valid "Origin" header.',
+          // No additional headers known at this point for the error response itself
         )
       } else {
         this.terminateResponse(
           response,
           HTTPStatus.FORBIDDEN,
-          `Origin "${requestOriginUrl}" is forbidden.`
+          `Origin "${requestOriginUrl}" is forbidden.`,
+          // No additional headers known at this point for the error response itself
         )
       }
-      return false
+      return null
     }
 
-    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin
-    response.cork(() => {
-      response.writeHeader('Access-Control-Allow-Origin', requestOriginUrl)
-      response.writeHeader('Access-Control-Allow-Credentials', 'true')
-      response.writeHeader('Vary', 'Origin')
-    })
-
-    return true
+    // If verification is successful, return the headers to be set by the caller.
+    return {
+      'Access-Control-Allow-Origin': requestOriginUrl,
+      'Access-Control-Allow-Credentials': 'true', // Typically needed with specific origins
+      'Vary': 'Origin' // Good practice when Access-Control-Allow-Origin is dynamic
+    };
   }
 
-  private handleOptions (response: uws.HttpResponse, request: uws.HttpRequest): void {
+  private handleOptions (response: uws.HttpResponse, request: uws.HttpRequest, baseCorsHeaders: Dictionary<string>): void {
+   const allHeadersForResponse = { ...baseCorsHeaders };
+
    const requestMethod = request.getHeader('access-control-request-method') as string | undefined
    if (!requestMethod) {
      this.terminateResponse(
        response,
        HTTPStatus.BAD_REQUEST,
-       'Missing header "Access-Control-Request-Method".'
+       'Missing header "Access-Control-Request-Method".',
+       allHeadersForResponse // Pass along already determined CORS headers
      )
      return
    }
@@ -362,13 +388,17 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
      this.terminateResponse(
        response,
        HTTPStatus.FORBIDDEN,
-       `Method ${requestMethod} is forbidden. Supported methods: ${this.methodsStr}`
+       `Method ${requestMethod} is forbidden. Supported methods: ${this.methodsStr}`,
+       allHeadersForResponse
      )
      return
    }
 
    const requestHeadersRaw = request.getHeader('access-control-request-headers') as string | undefined
    if (!requestHeadersRaw) {
+      // Some browsers might not send this for simple requests, but for preflight it's expected.
+      // Depending on strictness, this could be an error or allowed.
+      // For now, let's assume it's required for a preflight OPTIONS.
      this.terminateResponse(
        response,
        HTTPStatus.BAD_REQUEST,
@@ -382,17 +412,16 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
        this.terminateResponse(
          response,
          HTTPStatus.FORBIDDEN,
-         `Header ${requestHeaders[i]} is forbidden. Supported headers: ${this.headersStr}`
+         `Header ${requestHeaders[i]} is forbidden. Supported headers: ${this.headersStr}`,
+         allHeadersForResponse
        )
        return
      }
    }
 
-   response.cork(() => {
-    response.writeHeader('Access-Control-Allow-Methods', this.methodsStr)
-    response.writeHeader('Access-Control-Allow-Headers', this.headersStr)
-    this.terminateResponse(response, HTTPStatus.NO_CONTENT)
-   })
+   allHeadersForResponse['Access-Control-Allow-Methods'] = this.methodsStr;
+   allHeadersForResponse['Access-Control-Allow-Headers'] = this.headersStr;
+   this.terminateResponse(response, HTTPStatus.NO_CONTENT, undefined, allHeadersForResponse);
  }
 }
 
