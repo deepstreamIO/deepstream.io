@@ -1,3 +1,11 @@
+## [9.1.0] - 2025.06.18
+
+### Fix - breaking change
+
+when using uws http server response.writeStatus must be called before any other method, otherwise all response status are 200.
+I decided not to make a major release because if somebody else was using it a bug report would have been made.
+And thanks to a LLM's for the quick refactoring!
+
 ## [9.0.1] - 2025.06.17
 
 ### Feature
