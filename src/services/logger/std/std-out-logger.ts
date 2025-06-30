@@ -51,8 +51,8 @@ export class StdOutLogger extends DeepstreamPlugin implements DeepstreamLogger {
     this.log(LOG_LEVEL.ERROR, '', event, logMessage, metaData)
   }
 
-  public fatal (event: EVENT, logMessage: string): void {
-    this.log(LOG_LEVEL.FATAL, '', event, logMessage)
+  public fatal (event: EVENT, logMessage: string, metaData?: MetaData): void {
+    this.log(LOG_LEVEL.FATAL, '', event, logMessage, metaData)
     this.services.notifyFatalException()
   }
 

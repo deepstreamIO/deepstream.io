@@ -41,9 +41,9 @@ export class PinoLogger extends DeepstreamPlugin implements DeepstreamLogger {
      */
     public info (event: EVENT, message?: string, metaData?: any): void {
         if (metaData) {
-            this.logger.info({ ...metaData, message, event })
+            this.logger.info({ event, message, ...metaData })
         } else {
-            this.logger.info({ message, event })
+            this.logger.info({ event, message })
         }
     }
 
@@ -52,9 +52,9 @@ export class PinoLogger extends DeepstreamPlugin implements DeepstreamLogger {
      */
     public debug (event: EVENT, message?: string, metaData?: any): void {
         if (metaData) {
-            this.logger.debug({ ...metaData, message, event, })
+            this.logger.debug({ event, message, ...metaData })
         } else {
-            this.logger.debug({ message, event })
+            this.logger.debug({ event, message })
         }
     }
 
@@ -63,9 +63,9 @@ export class PinoLogger extends DeepstreamPlugin implements DeepstreamLogger {
      */
     public warn (event: EVENT, message?: string, metaData?: any): void {
         if (metaData) {
-            this.logger.warn({ ...metaData, message, event, })
+            this.logger.warn({ event, message, ...metaData })
         } else {
-            this.logger.warn({ message, event })
+            this.logger.warn({ event, message })
         }
     }
 
@@ -75,9 +75,9 @@ export class PinoLogger extends DeepstreamPlugin implements DeepstreamLogger {
     public error (event: EVENT, message?: string, metaData?: any): void {
         this.services.monitoring.onErrorLog(LOG_LEVEL.ERROR, event, message!, metaData!)
         if (metaData) {
-            this.logger.error({ ...metaData, message, event, })
+            this.logger.error({ event, message, ...metaData })
         } else {
-            this.logger.error({ message, event })
+            this.logger.error({ event, message })
         }
     }
 
@@ -87,9 +87,9 @@ export class PinoLogger extends DeepstreamPlugin implements DeepstreamLogger {
     public fatal (event: EVENT, message?: string, metaData?: any): void {
         this.services.monitoring.onErrorLog(LOG_LEVEL.FATAL, event, message!, metaData!)
         if (metaData) {
-            this.logger.fatal({ ...metaData, message, event, })
+            this.logger.fatal({ event, message, ...metaData })
         } else {
-            this.logger.fatal({ message, event })
+            this.logger.fatal({ event, message })
         }
         this.services.notifyFatalException()
     }
@@ -109,7 +109,7 @@ export class PinoLogger extends DeepstreamPlugin implements DeepstreamLogger {
         }
     }
 
-    private log (logLevel: pino.LevelWithSilent, namespace: string, event: EVENT, message: string) {
-        this.logger[logLevel]({ namespace, event, message })
+    private log (logLevel: pino.LevelWithSilent, namespace: string, event: EVENT, message: string, metaData?: any ) {
+        this.logger[logLevel]({ namespace, event, message, ...metaData })
     }
 }
