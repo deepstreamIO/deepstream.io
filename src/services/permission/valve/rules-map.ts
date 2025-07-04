@@ -50,6 +50,7 @@ const RULES_MAP: Dictionary<{ section: string, actions: Dictionary<RuleType> }> 
       [RECORD_ACTION.PATCH]: RULE_TYPES.WRITE,
       [RECORD_ACTION.NOTIFY]: RULE_TYPES.NOTIFY,
       [RECORD_ACTION.DELETE]: RULE_TYPES.DELETE,
+      [RECORD_ACTION.ERASE]: RULE_TYPES.DELETE
     },
   },
   [TOPIC.EVENT]: {
