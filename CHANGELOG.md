@@ -1,3 +1,9 @@
+## [9.1.3] - 2025.07.04
+
+### Fix
+
+Handle Erase messages as Delete messages in valve permissions
+
 ## [9.1.2] - 2025.06.30
 
 ### Fix
