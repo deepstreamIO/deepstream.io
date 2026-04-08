@@ -1,10 +1,14 @@
+## [10.0.1] - 2026.04.08
+
+### Chore
+
+Update uws and github actions
+
 ## [10.0.0] - 2025.08.02
 
 ### Fix - BREAKING CHANGE
 
 The storage authentication service, when creating new users automatically, was encoding the password hashes in 'ascii' format which can create characters that are not allowed in a database text field. This has been fixed by encoding the password hashes in 'base64'. Since this is a crippling bug and no one noticed before, I'm going to assume the feature is not being used in production and therefore a new non-backwards compatible version will be released.
-
-### Chore
 
 ## [9.1.3] - 2025.07.04
 

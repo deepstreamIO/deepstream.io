@@ -23,9 +23,9 @@ jobs:
   npm_publish:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
     # Setup .npmrc file to publish to npm
-    - uses: actions/setup-node@v3
+    - uses: actions/setup-node@v6
       with:
         node-version: '22.x'
         registry-url: 'https://registry.npmjs.org'
@@ -41,13 +41,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout reposistory
-      uses: actions/checkout@v3
+      uses: actions/checkout@v6
     - name: Checkout submodules
       run: git submodule update --init --recursive
     - name: Use Node.js
       env:
         DEFAULT_DELAY: 50
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v6
       with:
         node-version: '22.x'
     - run: npm install
@@ -65,13 +65,13 @@ jobs:
     runs-on: windows-latest
     steps:
     - name: Checkout reposistory
-      uses: actions/checkout@v3
+      uses: actions/checkout@v6
     - name: Checkout submodules
       run: git submodule update --init --recursive
     - name: Use Node.js
       env:
         DEFAULT_DELAY: 50
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v6
       with:
         node-version: '22.x'
     - run: npm install
@@ -89,13 +89,13 @@ jobs:
     runs-on: macos-latest
     steps:
     - name: Checkout reposistory
-      uses: actions/checkout@v3
+      uses: actions/checkout@v6
     - name: Checkout submodules
       run: git submodule update --init --recursive
     - name: Use Node.js
       env:
         DEFAULT_DELAY: 50
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v6
       with:
         node-version: '22.x'
     - run: npm install
@@ -112,7 +112,7 @@ jobs:
   docker-amd:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
     - name: Log in to Docker Hub
       uses: docker/login-action@v2
       with:
@@ -142,7 +142,7 @@ jobs:
     steps:
     - uses: docker/setup-qemu-action@v1
     - uses: docker/setup-buildx-action@v1
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
     - name: Log in to Docker Hub
       uses: docker/login-action@v2
       with:
@@ -172,7 +172,7 @@ jobs:
     steps:
     - uses: docker/setup-qemu-action@v1
     - uses: docker/setup-buildx-action@v1
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
     - name: Log in to Docker Hub
       uses: docker/login-action@v2
       with:

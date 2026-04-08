@@ -1,3 +1,6 @@
+import { createRequire } from "module"
+const require = createRequire(import.meta.url)
+
 import 'mocha'
 import { expect } from 'chai'
 const configCompiler = require('./config-compiler')

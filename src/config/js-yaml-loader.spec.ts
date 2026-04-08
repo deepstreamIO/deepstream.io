@@ -1,4 +1,6 @@
 import 'mocha'
+import { createRequire } from "module"
+const require = createRequire(import.meta.url)
 import { expect } from 'chai'
 import { spy } from 'sinon'
 

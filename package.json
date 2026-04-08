@@ -1,6 +1,6 @@
 {
   "name": "@deepstream/server",
-  "version": "10.0.0",
+  "version": "10.0.1",
   "description": "a scalable server for realtime webapps",
   "main": "./dist/src/deepstream.io.js",
   "bin": {
@@ -71,7 +71,7 @@
     "pino": "^9.6.0",
     "source-map-support": "^0.5.21",
     "uuid": "^8.3.2",
-    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.51.0",
+    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.61.0",
     "ws": "^7.5.9"
   },
   "devDependencies": {
