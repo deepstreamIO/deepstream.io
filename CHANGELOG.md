@@ -1,3 +1,9 @@
+## [10.0.2] - 2026.04.08
+
+### Fix
+
+Forgot to update package-lock...sorry
+
 ## [10.0.1] - 2026.04.08
 
 ### Chore
