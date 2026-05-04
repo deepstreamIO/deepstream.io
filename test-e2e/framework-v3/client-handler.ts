@@ -1,4 +1,4 @@
-import * as deepstream from 'deepstream.io-client-js'
+import deepstream from 'deepstream.io-client-js'
 import * as sinon from 'sinon'
 import { Message } from '../../src/constants'
 

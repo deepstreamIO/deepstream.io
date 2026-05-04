@@ -7,7 +7,7 @@ interface CachedRule {
 
 export default class RuleCache {
   private data = new Map<string, CachedRule>()
-  private purgeInterval: NodeJS.Timer
+  private purgeInterval: NodeJS.Timeout
 
   /**
    * This cache stores rules that are frequently used. It removes

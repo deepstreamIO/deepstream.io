@@ -1,7 +1,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
-import * as glob from 'glob'
+import { globSync } from 'glob'
 
 export const getDSInfo = (libDir?: string) => {
     let meta
@@ -28,7 +28,7 @@ export const getDSInfo = (libDir?: string) => {
 
 const fetchLibs = (libDir: string, meta: any) => {
     const directory = libDir || 'lib'
-    const files = glob.sync(path.join(directory, '*', 'package.json'))
+    const files = globSync(path.join(directory, '*', 'package.json'))
     meta.libs = files.map((filePath: any) => {
         const pkg = fs.readFileSync(filePath, 'utf8')
         const object = JSON.parse(pkg)

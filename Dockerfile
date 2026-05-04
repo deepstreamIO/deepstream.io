@@ -1,9 +1,14 @@
-FROM node:22 as builder
+FROM node:22 AS builder
 WORKDIR /app
 
 COPY package*.json ./
 
 RUN npm ci
+
+COPY . .
+
+RUN npm run tsc
+
 RUN npm install --omit=dev \
     @deepstream/cache-redis \
     # @deepstream/cache-memcached \
@@ -15,10 +20,6 @@ RUN npm install --omit=dev \
     @deepstream/storage-postgres \
     @deepstream/logger-winston \
     @deepstream/plugin-aws
-
-COPY . .
-
-RUN npm run tsc
 
 FROM node:22
 WORKDIR /usr/local/deepstream

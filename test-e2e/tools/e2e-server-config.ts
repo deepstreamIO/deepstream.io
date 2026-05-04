@@ -1,5 +1,5 @@
 import { PartialDeepstreamConfig, LOG_LEVEL } from '@deepstream/types'
-import * as permissions from '../config/permissions-open.json'
+import permissions from '../config/permissions-open.json'
 
 export const getServerConfig = (port: number): PartialDeepstreamConfig => ({
     serverName : `server-${port}`,

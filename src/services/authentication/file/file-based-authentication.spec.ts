@@ -4,10 +4,10 @@ import { FileBasedAuthentication } from './file-based-authentication'
 import { DeepstreamServices, EVENT, MetaData } from '@deepstream/types'
 import { PromiseDelay } from '../../../utils/utils'
 
-import * as users from '../../../test/config/users.json'
-import * as usersUnhashed from '../../../test/config/users-unhashed.json'
-import * as invalidUsersConfig from '../../../test/config/invalid-user-config.json'
-import * as emptyUsersMap from '../../../test/config/empty-map-config.json'
+import users from '../../../test/config/users.json'
+import usersUnhashed from '../../../test/config/users-unhashed.json'
+import invalidUsersConfig from '../../../test/config/invalid-user-config.json'
+import emptyUsersMap from '../../../test/config/empty-map-config.json'
 
 const createServices = () => {
   return {

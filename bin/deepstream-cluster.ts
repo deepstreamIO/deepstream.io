@@ -1,5 +1,5 @@
 import { Command } from 'commander'
-import * as cluster from 'cluster'
+import cluster from 'cluster'
 const numCPUs = require('os').cpus().length
 import { EVENT } from '@deepstream/types'
 
@@ -55,7 +55,6 @@ function action () {
     }
 
     // if it is a master process then call setting up worker process
-    // @ts-ignore
     if (cluster.isPrimary) {
         setupWorkerProcesses()
     } else {

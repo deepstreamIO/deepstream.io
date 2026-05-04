@@ -8,8 +8,8 @@ import { STATES, JSONValue } from '../../src/constants'
 import { LocalCache } from '../../src/services/cache/local-cache'
 import { ConfigPermission } from '../../src/services/permission/valve/config-permission'
 import { E2EClusterNode } from './e2e-cluster-node'
-import * as openPermissions from '../config/permissions-open.json'
-import * as complexPermissions from '../config/permissions-complex.json'
+import openPermissions from '../config/permissions-open.json'
+import complexPermissions from '../config/permissions-complex.json'
 
 const cache = new LocalCache()
 

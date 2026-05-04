@@ -16,7 +16,7 @@ export class WSBinarySocketWrapper extends WSSocketWrapper<Uint8Array> {
     return binaryMessageBuilder.getMessage(message, false)
   }
 
-  public parseMessage (message: ArrayBuffer): ParseResult[] {
+  public parseMessage (message: Uint8Array): ParseResult[] {
     if (typeof message === 'string') {
       this.invalidTypeReceived()
       return []

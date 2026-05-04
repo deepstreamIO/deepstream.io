@@ -19,8 +19,7 @@ exec(
     target,
     '--output',
     process.env.EXECUTABLE_NAME,
-    '--options',
-    '--max-old-space-size=8192',
+    '--options=max-old-space-size=8192',
     '--compress',
     'GZip'
   ]).then(() => {

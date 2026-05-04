@@ -14,7 +14,7 @@ interface HeapSnapshotOptions {
 export default class HeapSnapshot extends DeepstreamPlugin {
     public description = 'V8 Memory Analysis'
     private logger = this.services.logger.getNameSpace('MEMORY_ANALYSIS')
-    private snapshotInterval!: NodeJS.Timer
+    private snapshotInterval!: NodeJS.Timeout
 
     constructor (private options: HeapSnapshotOptions, private services: Readonly<DeepstreamServices>) {
         super()

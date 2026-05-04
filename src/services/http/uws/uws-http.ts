@@ -203,6 +203,15 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
     }
   }
 
+  public closeWebsocket (socket: uws.WebSocket<UserData>) {
+    // end() is graceful (flushes buffered messages, sends close frame); close() is forceful.
+    try {
+      socket.end()
+    } catch (e) {
+      socket.close()
+    }
+  }
+
   public getSocketWrappersForUserId (userId: string) {
     return [...this.connections.values()].filter((socketWrapper) => socketWrapper.userId === userId)
   }

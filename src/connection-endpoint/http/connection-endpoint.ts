@@ -308,7 +308,7 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Deepstre
    * response where possible.
    */
   private onSocketMessage (
-    messageResults: JifResult[], index: number, message: Message, responseCallback: Function, requestTimeoutId: NodeJS.Timer
+    messageResults: JifResult[], index: number, message: Message, responseCallback: Function, requestTimeoutId: NodeJS.Timeout
   ): void {
     const parseResult = this.jifHandler.toJIF(message)
     if (!parseResult) {
@@ -336,7 +336,7 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Deepstre
     event: string,
     errorMessage: string,
     responseCallback: Function,
-    requestTimeoutId: NodeJS.Timer
+    requestTimeoutId: NodeJS.Timeout
   ): void {
     const parseResult = this.jifHandler.errorToJIF(message, event)
     if (parseResult.done && messageResults[index] === null) {
@@ -348,7 +348,7 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Deepstre
   /**
    * Check whether any more responses are outstanding and finalize http response if not.
    */
-  private static checkComplete (messageResults: JifResult[], responseCallback: Function, requestTimeoutId: NodeJS.Timer): void {
+  private static checkComplete (messageResults: JifResult[], responseCallback: Function, requestTimeoutId: NodeJS.Timeout): void {
     const messageResult = HTTPConnectionEndpoint.calculateMessageResult(messageResults)
     if (messageResult === null) {
       // insufficient responses received

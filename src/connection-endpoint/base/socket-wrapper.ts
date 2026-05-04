@@ -81,11 +81,8 @@ export abstract class WSSocketWrapper<SerializedType extends { length: number }>
    * logic and closes the connection
    */
   public destroy (): void {
-    try {
-        this.socket.close()
-    } catch (e) {
-        this.socket.end()
-    }
+    // Close semantics differ per HTTP service (uWS forceful vs ws graceful), so delegate.
+    this.services.httpService.closeWebsocket(this.socket)
   }
 
   public close (): void {

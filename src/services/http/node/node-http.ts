@@ -1,6 +1,6 @@
 import { DeepstreamPlugin, DeepstreamHTTPService, EVENT, PostRequestHandler, GetRequestHandler, DeepstreamHTTPMeta, DeepstreamHTTPResponse, SocketHandshakeData, DeepstreamServices, DeepstreamConfig, SocketWrapper, WebSocketConnectionEndpoint, SocketWrapperFactory } from '@deepstream/types'
 // @ts-ignore
-import * as httpShutdown from 'http-shutdown'
+import httpShutdown from 'http-shutdown'
 import * as http from 'http'
 import * as https from 'https'
 import * as HTTPStatus from 'http-status'
@@ -112,6 +112,15 @@ export class NodeHTTP extends DeepstreamPlugin implements DeepstreamHTTPService 
         this.services.logger.warn(EVENT.ERROR, `Failed to deliver message to ${socketWrapper.userId}, error: ${err.message}`)
       }
     })
+  }
+
+  public closeWebsocket (socket: WebSocket) {
+    // ws library: close() is graceful (sends close frame, flushes pending data).
+    try {
+      socket.close()
+    } catch (e) {
+      socket.terminate()
+    }
   }
 
   public getSocketWrappersForUserId (userId: string) {

@@ -1,9 +1,10 @@
 #!/bin/bash
 set -e
 
-LTS_VERSION="22"
+LTS_VERSION="24"
 NODE_VERSION=$( node --version )
 NODE_VERSION_WITHOUT_V=$( echo ${NODE_VERSION} | cut -c2-10 )
+NODE_MAJOR=$( echo ${NODE_VERSION_WITHOUT_V} | cut -d. -f1 )
 COMMIT=$( node scripts/details.js COMMIT )
 PACKAGE_VERSION=$( node scripts/details.js VERSION )
 PACKAGE_NAME=$( node scripts/details.js NAME )
@@ -19,8 +20,8 @@ EXECUTABLE_NAME="build/deepstream"
 # Needed even for void builds for travis deploy to pass
 mkdir -p build
 
-if ! [[ ${NODE_VERSION_WITHOUT_V} == ${LTS_VERSION}* ]]; then
-    echo "Packaging only done on $LTS_VERSION.x"
+if ! [[ ${NODE_MAJOR} == "22" || ${NODE_MAJOR} == "24" ]]; then
+    echo "Packaging only done on Node 22.x or 24.x (current: ${NODE_VERSION})"
     exit
 fi
 
@@ -96,7 +97,7 @@ function compile {
     cd -
 
     echo "Creating '$EXECUTABLE_NAME', this will take a while..."
-    LTS=${LTS_VERSION} OS=${OS} EXECUTABLE_NAME=${EXECUTABLE_NAME} node scripts/pkg.js
+    LTS=${NODE_MAJOR} OS=${OS} EXECUTABLE_NAME=${EXECUTABLE_NAME} node scripts/pkg.js
 
     PROC_ID=$!
     SECONDS=0;
@@ -121,7 +122,7 @@ function compile {
     echo -e "\tAdding Changelog"
     cp CHANGELOG.md ${DEEPSTREAM_PACKAGE}/doc/CHANGELOG.md
     echo -e "\tAdding Licenses"
-    curl -L https://raw.githubusercontent.com/nodejs/node/v22.x/LICENSE -o ${DEEPSTREAM_PACKAGE}/doc/NODE.LICENSE
+    curl -L https://raw.githubusercontent.com/nodejs/node/v${NODE_MAJOR}.x/LICENSE -o ${DEEPSTREAM_PACKAGE}/doc/NODE.LICENSE
     mv build/DEPENDENCIES.LICENSE ${DEEPSTREAM_PACKAGE}/doc/LICENSE
 
     echo "Moving deepstream into package structure at $DEEPSTREAM_PACKAGE"

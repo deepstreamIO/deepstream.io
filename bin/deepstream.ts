@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import * as pgk from '../package.json'
+import pgk from '../package.json'
 
 import { Command } from 'commander'
 import { start } from './deepstream-start'

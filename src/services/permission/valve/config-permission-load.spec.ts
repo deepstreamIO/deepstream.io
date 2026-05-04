@@ -7,8 +7,8 @@ import * as testHelper from '../../../test/helper/test-helper'
 import { PromiseDelay } from '../../../utils/utils'
 import { EVENT } from '@deepstream/types'
 
-import * as invalidPermissionConfig from '../../../test/config/invalid-permission-conf.json'
-import * as noPrivateEventsConfig from '../../../test/config/no-private-events-permission-config.json'
+import invalidPermissionConfig from '../../../test/config/invalid-permission-conf.json'
+import noPrivateEventsConfig from '../../../test/config/no-private-events-permission-config.json'
 
 const { config, services } = testHelper.getDeepstreamPermissionOptions()
 

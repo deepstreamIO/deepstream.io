@@ -2,7 +2,7 @@ require('source-map-support').install()
 
 import { EventEmitter } from 'events'
 
-import * as pkg from '../package.json'
+import pkg from '../package.json'
 import { merge } from './utils/utils'
 import { STATES, TOPIC } from './constants'
 

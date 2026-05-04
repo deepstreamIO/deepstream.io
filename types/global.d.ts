@@ -1,9 +1,12 @@
-declare namespace NodeJS {
-  export interface Global {
-    deepstreamCLI: any
-    deepstreamLibDir: string | null
-    deepstreamConfDir: string | null
-    require (path: string): any
-    e2eHarness: any // Used by e2e tests
-  }
+declare global {
+  // eslint-disable-next-line no-var
+  var deepstreamCLI: any
+  // eslint-disable-next-line no-var
+  var deepstreamLibDir: string | null
+  // eslint-disable-next-line no-var
+  var deepstreamConfDir: string | null
+  // eslint-disable-next-line no-var
+  var e2eHarness: any // Used by e2e tests
 }
+
+export {}

@@ -1,4 +1,4 @@
-import * as chalk from 'chalk'
+import chalk from 'chalk'
 import { DeepstreamPlugin, DeepstreamLogger, DeepstreamServices, DeepstreamConfig, LOG_LEVEL, NamespacedLogger, EVENT, MetaData } from '@deepstream/types'
 import { EOL } from 'os'
 

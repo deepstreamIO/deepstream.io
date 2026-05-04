@@ -1,9 +1,9 @@
 import { Message, TOPIC } from '../../constants'
-import * as cluster from 'cluster'
+import cluster from 'cluster'
 import { EventEmitter } from 'events'
 import { DeepstreamClusterNode, DeepstreamPlugin, DeepstreamServices, DeepstreamConfig, EVENT } from '@deepstream/types'
 
-if (cluster.isMaster) {
+if (cluster.isPrimary) {
     cluster.on('message', (worker, serializedMessage: string, handle) => {
         for (const id in cluster.workers) {
             const toWorker = cluster.workers[id]!
@@ -26,7 +26,7 @@ export class VerticalClusterNode extends DeepstreamPlugin implements DeepstreamC
 
     public init () {
         if (cluster.isWorker) {
-            process.on('message', (serializedMessage) => {
+            process.on('message', (serializedMessage: string) => {
                 if (this.isReady) {
                     const { fromServer, message } = JSON.parse(serializedMessage)
 

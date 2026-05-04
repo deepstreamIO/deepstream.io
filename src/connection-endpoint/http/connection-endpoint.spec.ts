@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import * as needle from 'needle'
+import needle from 'needle'
 
 import LoggerMock from '../../test/mock/logger-mock'
 import { DeepstreamServices, DeepstreamConfig } from '@deepstream/types';

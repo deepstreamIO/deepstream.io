@@ -19,7 +19,7 @@ export class ListenerRegistry implements SubscriptionListener {
   private unsuccesfulMatches = new Map<string, number>()
 
   private clusterProvidedRecords: StateRegistry
-  private rematchInterval!: NodeJS.Timer
+  private rematchInterval!: NodeJS.Timeout
 
   /**
   * Deepstream.io allows clients to register as listeners for subscriptions.
