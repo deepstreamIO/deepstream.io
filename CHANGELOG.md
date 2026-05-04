@@ -1,3 +1,13 @@
+## [10.0.3] - 2026.05.03
+
+### Chore
+
+Update deps
+
+### Task
+
+Redact sensitive socket info from pino logs
+
 ## [10.0.2] - 2026.04.08
 
 ### Fix
