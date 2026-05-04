@@ -16,7 +16,10 @@ export class PinoLogger extends DeepstreamPlugin implements DeepstreamLogger {
 
     constructor (pluginOptions: LoggerOptions, private services: DeepstreamServices, config: DeepstreamConfig) {
         super()
-        this.logger = pino(pluginOptions)
+        this.logger =  pino({
+            ...pluginOptions,
+            redact: pluginOptions.redact ?? ['socketWrapper.config']
+        })
         this.setLogLevel(config.logLevel)
     }
 
