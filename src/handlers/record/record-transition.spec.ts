@@ -1,4 +1,5 @@
 import 'mocha'
+import { expect } from 'chai'
 
 import * as M from './test-messages'
 import * as C from '../../constants'
@@ -8,12 +9,12 @@ import { RecordTransition } from './record-transition'
 import { PromiseDelay } from '../../utils/utils';
 
 describe('RecordTransition', () => {
-  let services
-  let config
+  let services: any
+  let config: any
   // let socketWrapper
-  let recordTransition
-  let testMocks
-  let client
+  let recordTransition: any
+  let testMocks: any
+  let client: any
 
   beforeEach(() => {
     testMocks = getTestMocks()
@@ -23,7 +24,7 @@ describe('RecordTransition', () => {
     services = options.services
     config = options.config
 
-    recordTransition = new RecordTransition(M.recordUpdate.name, config, services, testMocks.recordHandler)
+    recordTransition = new RecordTransition(M.recordUpdate.name, config, services, testMocks.recordHandler, {})
 
   })
 
@@ -68,14 +69,12 @@ describe('RecordTransition', () => {
   })
 })
 
-/*
-describe.skip('record transitions', () => {
-  let services
-  let config
-  let socketWrapper
-  let recordTransition
-  let testMocks
-  let client
+describe('record transitions', () => {
+  let services: any
+  let config: any
+  let recordTransition: any
+  let testMocks: any
+  let client: any
 
   beforeEach(() => {
     testMocks = getTestMocks()
@@ -85,9 +84,7 @@ describe.skip('record transitions', () => {
     services = options.services
     config = options.config
 
-    recordTransition = new RecordTransition(M.recordUpdate.name, config, services, testMocks.recordHandler)
-
-    services.cache.set('some-record', M.recordData, () => {})
+    recordTransition = new RecordTransition(M.recordUpdate.name, config, services, testMocks.recordHandler, {})
   })
 
   afterEach(() => {
@@ -95,7 +92,9 @@ describe.skip('record transitions', () => {
     testMocks.recordHandlerMock.verify()
   })
 
-  it('retrieves the empty record', () => {
+  it('applies an update and broadcasts a completed transition', () => {
+    services.cache.set(M.recordUpdate.name, M.recordVersion, Object.assign({}, M.recordData), () => {})
+
     testMocks.recordHandlerMock
       .expects('broadcastUpdate')
       .once()
@@ -106,83 +105,185 @@ describe.skip('record transitions', () => {
       .once()
       .withExactArgs(M.recordUpdate.name)
 
-    recordTransition.add(client.socketWrapper, Object.assign({}, M.recordUpdate))
-  })
-
-  it('adds an update to the queue', () => {
-    services.cache.nextGetWillBeSynchronous = false
-
-    expect(recordTransition.steps.length).to.equal(0)
     recordTransition.add(client.socketWrapper, M.recordUpdate)
-    expect(recordTransition.steps.length).to.equal(1)
   })
 
-  it('adds a message with invalid data to the queue', () => {
+  it('sends INVALID_MESSAGE_DATA when data is malformed JSON', () => {
     const invalidMessage = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.UPDATE,
+      action: C.RECORD_ACTION.UPDATE,
       name: 'bob',
       version: 1,
       data: '{ b ]'
     }
 
     client.socketWrapperMock
-      .expects('sendError')
+      .expects('sendMessage')
       .once()
-      .withExactArgs(invalidMessage, C.EVENT.INVALID_MESSAGE_DATA)
+      .withExactArgs({
+        topic: C.TOPIC.RECORD,
+        action: C.RECORD_ACTION.INVALID_MESSAGE_DATA,
+        data: invalidMessage.data
+      })
 
-    recordTransition.add(client.socketWrapper, invalidMessage)
+    recordTransition.add(client.socketWrapper, invalidMessage as any)
   })
 
-  it('adds a message with null data to the queue', () => {
+  it('sends INVALID_MESSAGE_DATA when data is a non-JSON string', () => {
     const invalidMessage = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.UPDATE,
-      name: 'bob',
-      version: 1,
-      data: 'null'
-    }
-
-    client.socketWrapperMock
-      .expects('sendError')
-      .once()
-      .withExactArgs(invalidMessage, C.EVENT.INVALID_MESSAGE_DATA)
-
-    recordTransition.add(client.socketWrapper, invalidMessage)
-  })
-
-  it('adds a message with string data to the queue', () => {
-    const invalidMessage = {
-      topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.UPDATE,
+      action: C.RECORD_ACTION.UPDATE,
       name: 'bob',
       version: 1,
       data: 'This is a string'
     }
 
     client.socketWrapperMock
-      .expects('sendError')
+      .expects('sendMessage')
       .once()
-      .withExactArgs(invalidMessage, C.EVENT.INVALID_MESSAGE_DATA)
+      .withExactArgs({
+        topic: C.TOPIC.RECORD,
+        action: C.RECORD_ACTION.INVALID_MESSAGE_DATA,
+        data: invalidMessage.data
+      })
+
+    recordTransition.add(client.socketWrapper, invalidMessage as any)
+  })
+
+  it('sends INVALID_MESSAGE_DATA when data parses to null', () => {
+    const invalidMessage: any = {
+      topic: C.TOPIC.RECORD,
+      action: C.RECORD_ACTION.UPDATE,
+      name: 'bob',
+      version: 1,
+      data: 'null'
+    }
+
+    client.socketWrapperMock
+      .expects('sendMessage')
+      .once()
+      .withExactArgs({
+        topic: C.TOPIC.RECORD,
+        action: C.RECORD_ACTION.INVALID_MESSAGE_DATA,
+        name: 'bob',
+        version: 1,
+        data: 'null',
+        parsedData: null,
+        originalAction: C.RECORD_ACTION.UPDATE
+      })
 
     recordTransition.add(client.socketWrapper, invalidMessage)
   })
 
-  it('adds a message with numeric data to the queue', () => {
-    const invalidMessage = {
+  it('sends INVALID_MESSAGE_DATA when data parses to a number', () => {
+    const invalidMessage: any = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.UPDATE,
+      action: C.RECORD_ACTION.UPDATE,
       name: 'bob',
       version: 1,
       data: '1234'
     }
 
     client.socketWrapperMock
-      .expects('sendError')
+      .expects('sendMessage')
       .once()
-      .withExactArgs(invalidMessage, C.EVENT.INVALID_MESSAGE_DATA)
+      .withExactArgs({
+        topic: C.TOPIC.RECORD,
+        action: C.RECORD_ACTION.INVALID_MESSAGE_DATA,
+        name: 'bob',
+        version: 1,
+        data: '1234',
+        parsedData: 1234,
+        originalAction: C.RECORD_ACTION.UPDATE
+      })
 
     recordTransition.add(client.socketWrapper, invalidMessage)
+  })
+
+  it('hasVersion returns true for every version up to lastVersion and false above', () => {
+    services.cache.set(M.recordUpdate.name, M.recordVersion, Object.assign({}, M.recordData), () => {})
+
+    testMocks.recordHandlerMock.expects('broadcastUpdate').once()
+    testMocks.recordHandlerMock.expects('transitionComplete').once()
+
+    recordTransition.add(client.socketWrapper, M.recordUpdate)
+
+    expect(recordTransition.hasVersion(-1)).to.equal(false)
+    expect(recordTransition.hasVersion(0)).to.equal(true)
+    expect(recordTransition.hasVersion(M.recordUpdate.version - 1)).to.equal(true)
+    expect(recordTransition.hasVersion(M.recordUpdate.version)).to.equal(true)
+    expect(recordTransition.hasVersion(M.recordUpdate.version + 1)).to.equal(false)
+    expect(recordTransition.hasVersion(M.recordUpdate.version + 2)).to.equal(false)
+  })
+
+  it('destroys the transition and ignores subsequent destroys', (done) => {
+    services.cache.nextGetWillBeSynchronous = false
+
+    recordTransition.add(client.socketWrapper, M.recordUpdate)
+    recordTransition.destroy()
+    expect(recordTransition.isDestroyed).to.equal(true)
+
+    recordTransition.destroy()
+    expect(recordTransition.isDestroyed).to.equal(true)
+
+    setTimeout(done, 50)
+  })
+
+  it('errors when the record does not exist and upsert is disabled', () => {
+    client.socketWrapperMock
+      .expects('sendMessage')
+      .once()
+      .withExactArgs({
+        topic: C.TOPIC.RECORD,
+        action: C.RECORD_ACTION.RECORD_UPDATE_ERROR,
+        name: M.recordUpdate.name,
+        isError: true,
+        isWriteAck: M.recordUpdate.isWriteAck,
+        correlationId: undefined
+      })
+
+    testMocks.recordHandlerMock
+      .expects('transitionComplete')
+      .once()
+      .withExactArgs(M.recordUpdate.name)
+
+    recordTransition.add(client.socketWrapper, M.recordUpdate)
+
+    expect(services.logger.logSpy.calledWith(
+      3,
+      C.RECORD_ACTION[C.RECORD_ACTION.RECORD_UPDATE_ERROR],
+      `Received update for non-existant record ${M.recordUpdate.name}`
+    )).to.equal(true)
+  })
+
+  it('does not write to storage when the record is excluded by prefix', () => {
+    const excludedName = 'no-storage/1'
+    const excludedUpdate = Object.assign({}, M.recordUpdate, { name: excludedName, version: 1 })
+    recordTransition = new RecordTransition(excludedName, config, services, testMocks.recordHandler, {})
+
+    testMocks.recordHandlerMock.expects('broadcastUpdate').once()
+    testMocks.recordHandlerMock.expects('transitionComplete').once()
+
+    recordTransition.add(client.socketWrapper, excludedUpdate, true)
+
+    expect(services.storage.lastSetKey).to.equal(null)
+    expect(services.storage.completedSetOperations).to.equal(0)
+    expect(services.cache.lastSetKey).to.equal(excludedName)
+  })
+
+  // ---------------------------------------------------------------------------
+  // Legacy tests not ported. They depend on harness that no longer exists
+  // (recordRequestMockCallback, createRecordTransition, SocketMock, the
+  // wire-format `msg()` helper, the 3-argument `add(sw, version, message)`
+  // signature, or private `steps`/`_record` fields). Kept as reference.
+  // ---------------------------------------------------------------------------
+  /*
+  it('adds an update to the queue', () => {
+    services.cache.nextGetWillBeSynchronous = false
+
+    expect(recordTransition.steps.length).to.equal(0)
+    recordTransition.add(client.socketWrapper, M.recordUpdate)
+    expect(recordTransition.steps.length).to.equal(1)
   })
 
   it.skip('retrieves the empty record', (done) => {
@@ -205,22 +306,6 @@ describe.skip('record transitions', () => {
   it.skip('receives a patch message whilst the transition is in progress', () => {
     expect(recordHandlerMock._$transitionComplete).to.have.callCount(0)
     recordTransition.add(socketWrapper, 3, patchMessage2)
-  })
-
-  it('returns hasVersion for 1,2 and 3', () => {
-    services.cache.nextOperationWillBeSynchronous = false
-
-    recordTransition.add(client.socketWrapper, M.recordUpdate)
-
-    expect(recordTransition.hasVersion(0)).to.equal(true)
-    expect(recordTransition.hasVersion(1)).to.equal(true)
-    expect(recordTransition.hasVersion(2)).to.equal(true)
-    expect(recordTransition.hasVersion(3)).to.equal(true)
-    expect(recordTransition.hasVersion(4)).to.equal(true)
-    expect(recordTransition.hasVersion(5)).to.equal(true)
-    expect(recordTransition.hasVersion(6)).to.equal(true)
-    expect(recordTransition.hasVersion(7)).to.equal(false)
-    expect(recordTransition.hasVersion(8)).to.equal(false)
   })
 
   it.skip('processes a queue', (done) => {
@@ -246,26 +331,6 @@ describe.skip('record transitions', () => {
     recordTransition.add(client.socketWrapper, M.recordPatch)
     recordTransition.add(client.socketWrapper, Object.assign({}, M.recordUpdate, { version: M.recordUpdate.version + 1 }))
     recordTransition.add(client.socketWrapper, Object.assign({}, M.recordUpdate, { version: M.recordUpdate.version + 2 }))
-  })
-
-  describe('does not store excluded data', () => {
-
-    it('retrieves the empty record', () => {
-      expect(recordHandlerMock._$broadcastUpdate).to.have.callCount(0)
-      expect(recordHandlerMock._$transitionComplete).to.have.callCount(0)
-      recordRequestMockCallback()
-      expect(recordHandlerMock._$broadcastUpdate).to.have.been.calledWith('no-storage/1', patchMessage, false, socketWrapper)
-      expect(recordHandlerMock._$transitionComplete).to.have.been.calledWith('no-storage/1')
-    })
-
-    it('does not store transition in storage', (done) => {
-      const check = setInterval(() => {
-        if (services.storage.completedSetOperations === 0) {
-          clearInterval(check)
-          done()
-        }
-      }, 1)
-    })
   })
 
   describe('destroys a transition between steps', () => {
@@ -298,30 +363,6 @@ describe.skip('record transitions', () => {
     })
   })
 
-  describe('destroys the transition', () => {
-    before(() => {
-      createRecordTransition()
-      services.cache.nextOperationWillBeSynchronous = false
-    })
-
-    it('destroys the transition', (done) => {
-      recordTransition.destroy()
-      expect(recordTransition.isDestroyed).to.equal(true)
-      expect(recordTransition.steps).to.equal(null)
-      setTimeout(() => {
-        // just leave this here to make sure no error is thrown when the
-        // record request returns after 30ms
-        done()
-      }, 50)
-    })
-
-    it('calls destroy a second time without causing problems', () => {
-      recordTransition.destroy()
-      expect(recordTransition.isDestroyed).to.equal(true)
-      expect(recordTransition.steps).to.equal(null)
-    })
-  })
-
   describe('recordRequest returns an error', () => {
     before(() => {
       createRecordTransition()
@@ -332,20 +373,6 @@ describe.skip('record transitions', () => {
       expect(socketWrapper.socket.lastSendMessage).to.equal(null)
       recordRequestMockCallback('errorMsg', true)
       expect(services.logger.logSpy).to.have.been.calledWith(3, 'RECORD_UPDATE_ERROR', 'errorMsg')
-      expect(socketWrapper.socket.lastSendMessage).to.equal(msg('R|E|RECORD_UPDATE_ERROR|1+'))
-    })
-  })
-
-  describe('recordRequest returns null', () => {
-    before(() => {
-      createRecordTransition()
-      services.cache.nextOperationWillBeSynchronous = false
-    })
-
-    it('receives a non existant error', () => {
-      expect(socketWrapper.socket.lastSendMessage).to.equal(null)
-      recordRequestMockCallback(null)
-      expect(services.logger.logSpy).to.have.been.calledWith(3, 'RECORD_UPDATE_ERROR', 'Received update for non-existant record recordName')
       expect(socketWrapper.socket.lastSendMessage).to.equal(msg('R|E|RECORD_UPDATE_ERROR|1+'))
     })
   })
@@ -419,5 +446,5 @@ describe.skip('record transitions', () => {
       }, 50)
     })
   })
+  */
 })
-*/
