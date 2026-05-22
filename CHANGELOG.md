@@ -1,3 +1,13 @@
+## [10.0.4] - 2026.05.22
+
+### Fix
+
+record.setData was failing with VERSION_EXISTS on some cases. Set data is an upsert operation that bypasses versions by explicitely setting it to -1. A missing check was added.
+
+### Task
+
+Port some missing tests from record-transition
+
 ## [10.0.3] - 2026.05.03
 
 ### Chore
