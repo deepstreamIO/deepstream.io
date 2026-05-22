@@ -146,7 +146,7 @@ export class RecordTransition {
       return
     }
 
-    if (this.lastVersion !== null && this.lastVersion !== version - 1) {
+    if (this.lastVersion !== null && this.lastVersion !== version - 1 && version !== -1) {
       this.sendVersionExists(update)
       return
     }
