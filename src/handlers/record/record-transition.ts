@@ -1,4 +1,4 @@
-import { setValue as setPathValue } from '../../utils/json-path'
+import { setValue as setPathValue, isValidPath } from '../../utils/json-path'
 import RecordHandler from './record-handler'
 import { recordRequest } from './record-request'
 import { RecordWriteMessage, TOPIC, RECORD_ACTION, Message } from '../../constants'
@@ -124,6 +124,14 @@ export class RecordTransition {
         topic: TOPIC.RECORD,
         action: RECORD_ACTION.INVALID_MESSAGE_DATA,
         data: message.data
+      })
+      return
+    }
+
+    if (message.path && !isValidPath(message.path)) {
+      socketWrapper.sendMessage({ ...message,
+        action: RECORD_ACTION.INVALID_MESSAGE_DATA,
+        originalAction: message.action,
       })
       return
     }

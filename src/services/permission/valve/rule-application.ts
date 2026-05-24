@@ -231,7 +231,11 @@ export default class RuleApplication {
 
     if (typeof currentData !== UNDEFINED && currentData !== LOADING) {
       data = JSON.parse(JSON.stringify(currentData))
-      setValue(data, msg.path, msg.parsedData)
+      try {
+        setValue(data, msg.path, msg.parsedData)
+      } catch (e) {
+        return e as Error
+      }
       return data
     }
     this.loadRecord(this.params.name)

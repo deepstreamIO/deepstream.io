@@ -1,4 +1,5 @@
 const SPLIT_REG_EXP = /[[\]]/g
+const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
 
 /**
 * Returns the value of the path or
@@ -50,6 +51,20 @@ export function setValue (root: any, path: string, value: any): void {
 }
 
 /**
+ * Returns true if the path is safe to use with getValue / setValue.
+ * Rejects paths containing __proto__, constructor, or prototype tokens
+ * that would otherwise allow prototype-chain traversal.
+ */
+export function isValidPath (path: string): boolean {
+  try {
+    tokenize(path)
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
  * Parses the path. Splits it into
  * keys for objects and indices for arrays.
  */
@@ -70,6 +85,10 @@ function tokenize (path: string): Array<string | number> {
     if (arrayIndexes.length === 0) {
       // TODO
       continue
+    }
+
+    if (FORBIDDEN_KEYS.has(arrayIndexes[0])) {
+      throw new Error(`invalid path: forbidden key '${arrayIndexes[0]}'`)
     }
 
     tokens.push(arrayIndexes[0])

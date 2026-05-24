@@ -328,3 +328,46 @@ describe('objects are created from paths and their value is set correctly', () =
   })
 
 })
+
+describe('rejects prototype-pollution paths', () => {
+  afterEach(() => {
+    delete (Object.prototype as any).polluted
+  })
+
+  it('throws on __proto__ as the first segment', () => {
+    const record: any = {}
+    expect(() => jsonPath.setValue(record, '__proto__.polluted', true)).to.throw(/forbidden/)
+    expect(({} as any).polluted).to.equal(undefined)
+  })
+
+  it('throws on __proto__ as a nested segment', () => {
+    const record: any = { a: {} }
+    expect(() => jsonPath.setValue(record, 'a.__proto__.polluted', true)).to.throw(/forbidden/)
+    expect(({} as any).polluted).to.equal(undefined)
+  })
+
+  it('throws on constructor.prototype path', () => {
+    const record: any = {}
+    expect(() => jsonPath.setValue(record, 'constructor.prototype.polluted', true)).to.throw(/forbidden/)
+    expect(({} as any).polluted).to.equal(undefined)
+  })
+
+  it('throws on a single __proto__ segment (record prototype switch)', () => {
+    const record: any = {}
+    expect(() => jsonPath.setValue(record, '__proto__', { polluted: true })).to.throw(/forbidden/)
+    expect((record as any).polluted).to.equal(undefined)
+  })
+
+  it('getValue refuses to traverse __proto__', () => {
+    expect(() => jsonPath.getValue({}, '__proto__.toString')).to.throw(/forbidden/)
+  })
+
+  it('isValidPath flags forbidden keys but accepts normal paths', () => {
+    expect(jsonPath.isValidPath('__proto__.x')).to.equal(false)
+    expect(jsonPath.isValidPath('constructor.prototype.x')).to.equal(false)
+    expect(jsonPath.isValidPath('a.__proto__.x')).to.equal(false)
+    expect(jsonPath.isValidPath('a.b.c')).to.equal(true)
+    expect(jsonPath.isValidPath('items[0].name')).to.equal(true)
+    expect(jsonPath.isValidPath('user_proto.foo')).to.equal(true)
+  })
+})
