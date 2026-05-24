@@ -1,3 +1,9 @@
+## [10.0.5] - 2026.05.24
+
+### Security
+
+Fix prototype pollution vulnerability.
+
 ## [10.0.4] - 2026.05.22
 
 ### Fix
