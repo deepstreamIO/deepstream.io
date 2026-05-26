@@ -208,6 +208,81 @@ describe('record handler handles messages', () => {
     })
   })
 
+  it('applies a PATCH_MULTI batch atomically (one version bump, one cache write)', () => {
+    const recordPatchMulti = Object.assign({}, M.recordPatchMulti)
+    services.cache.set('some-record', M.recordVersion, Object.assign({}, M.recordData), () => {})
+
+    testMocks.subscriptionRegistryMock
+      .expects('sendToSubscribers')
+      .once()
+      .withExactArgs(recordPatchMulti.name, recordPatchMulti, false, client.socketWrapper)
+
+    recordHandler.handle(client.socketWrapper, recordPatchMulti)
+
+    expect(services.cache.lastSetVersion).to.equal(M.recordVersion + 1)
+    services.cache.get('some-record', (error, version, record) => {
+      expect(version).to.equal(M.recordVersion + 1)
+      expect(record).to.deep.equal({ name: 'Kowalski', lastname: 'Egon', firstname: 'Marty' })
+    })
+  })
+
+  it('rejects PATCH_MULTI with non-array parsedData as INVALID_MESSAGE_DATA', () => {
+    services.cache.set('some-record', M.recordVersion, Object.assign({}, M.recordData), () => {})
+
+    client.socketWrapperMock
+      .expects('sendMessage')
+      .once()
+      .withExactArgs({
+        ...M.recordPatchMultiInvalid,
+        action: C.RECORD_ACTION.INVALID_MESSAGE_DATA,
+        originalAction: C.RECORD_ACTION.PATCH_MULTI,
+      })
+
+    testMocks.subscriptionRegistryMock
+      .expects('sendToSubscribers')
+      .never()
+
+    recordHandler.handle(client.socketWrapper, M.recordPatchMultiInvalid)
+
+    services.cache.get('some-record', (error, version) => {
+      expect(version).to.equal(M.recordVersion)
+    })
+  })
+
+  it('rejects PATCH_MULTI with an unsafe path as INVALID_MESSAGE_DATA', () => {
+    services.cache.set('some-record', M.recordVersion, Object.assign({}, M.recordData), () => {})
+    const unsafe = {
+      topic: C.TOPIC.RECORD,
+      action: C.RECORD_ACTION.PATCH_MULTI,
+      name: 'some-record',
+      version: M.recordVersion + 1,
+      parsedData: [
+        { path: 'lastname', data: 'Egon' },
+        { path: '__proto__', data: 'Marty' }
+      ],
+      isWriteAck: false
+    }
+
+    client.socketWrapperMock
+      .expects('sendMessage')
+      .once()
+      .withExactArgs({
+        ...unsafe,
+        action: C.RECORD_ACTION.INVALID_MESSAGE_DATA,
+        originalAction: C.RECORD_ACTION.PATCH_MULTI,
+      })
+
+    testMocks.subscriptionRegistryMock
+      .expects('sendToSubscribers')
+      .never()
+
+    recordHandler.handle(client.socketWrapper, unsafe)
+
+    services.cache.get('some-record', (error, version) => {
+      expect(version).to.equal(M.recordVersion)
+    })
+  })
+
   it('updates a record', () => {
     services.cache.set('some-record', M.recordVersion, M.recordData, () => {})
 

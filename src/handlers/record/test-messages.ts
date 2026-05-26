@@ -123,6 +123,40 @@ export const recordPatchWithAck = {
   isWriteAck: true
 }
 
+export const recordPatchMulti = {
+  topic: C.TOPIC.RECORD,
+  action: C.RECORD_ACTION.PATCH_MULTI,
+  name: 'some-record',
+  version: recordVersion + 1,
+  parsedData: [
+    { path: 'lastname', data: 'Egon' },
+    { path: 'firstname', data: 'Marty' }
+  ],
+  isWriteAck: false
+}
+
+export const recordPatchMultiWithAck = {
+  topic: C.TOPIC.RECORD,
+  action: C.RECORD_ACTION.PATCH_MULTI,
+  name: 'some-record',
+  version: recordVersion + 1,
+  parsedData: [
+    { path: 'lastname', data: 'Egon' },
+    { path: 'firstname', data: 'Marty' }
+  ],
+  isWriteAck: true,
+  correlationId: '1234'
+}
+
+export const recordPatchMultiInvalid = {
+  topic: C.TOPIC.RECORD,
+  action: C.RECORD_ACTION.PATCH_MULTI,
+  name: 'some-record',
+  version: recordVersion + 1,
+  parsedData: 'not-an-array',
+  isWriteAck: false
+}
+
 export const recordDelete = {
   topic: C.TOPIC.RECORD,
   action: C.RECORD_ACTION.DELETE,

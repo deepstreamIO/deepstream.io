@@ -107,9 +107,9 @@ export default class RecordHandler extends Handler<RecordMessage> {
       return
     }
 
-    if (action === RA.UPDATE || action === RA.PATCH || action === RA.ERASE) {
+    if (action === RA.UPDATE || action === RA.PATCH || action === RA.ERASE || action === RA.PATCH_MULTI) {
     /*
-     * Handle complete (UPDATE) or partial (PATCH/ERASE) updates
+     * Handle complete (UPDATE), partial (PATCH/ERASE), or batched (PATCH_MULTI) updates
      */
       this.update(socketWrapper, message as RecordWriteMessage, message.isWriteAck || false)
       return
@@ -512,8 +512,10 @@ export default class RecordHandler extends Handler<RecordMessage> {
       return
     }
 
-    const isPatch = message.path !== undefined
-    message = { ...message, action: isPatch ? RA.PATCH : RA.UPDATE }
+    if (message.action !== RA.PATCH_MULTI) {
+      const isPatch = message.path !== undefined
+      message = { ...message, action: isPatch ? RA.PATCH : RA.UPDATE }
+    }
 
     let transition = this.transitions.get(recordName)
     if (transition && transition.hasVersion(version)) {

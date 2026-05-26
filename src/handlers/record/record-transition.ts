@@ -146,6 +146,27 @@ export class RecordTransition {
       }
     }
 
+    if (message.action === RECORD_ACTION.PATCH_MULTI) {
+      const ops = message.parsedData
+      if (!Array.isArray(ops) || ops.length === 0) {
+        socketWrapper.sendMessage({ ...message,
+          action: RECORD_ACTION.INVALID_MESSAGE_DATA,
+          originalAction: message.action,
+        })
+        return
+      }
+      for (let i = 0; i < ops.length; i++) {
+        const op = ops[i] as any
+        if (!op || typeof op.path !== 'string' || !isValidPath(op.path)) {
+          socketWrapper.sendMessage({ ...message,
+            action: RECORD_ACTION.INVALID_MESSAGE_DATA,
+            originalAction: message.action,
+          })
+          return
+        }
+      }
+    }
+
     if (this.lastVersion !== null && version > this.lastVersion + 1) {
       socketWrapper.sendMessage({ ...message,
         action: RECORD_ACTION.INVALID_VERSION,
@@ -276,7 +297,27 @@ export class RecordTransition {
 
     this.version = message.version
 
-    if (message.path) {
+    if (message.action === RECORD_ACTION.PATCH_MULTI) {
+      // Ordered, atomic application of a batch of path/data ops.
+      // Paths were validated up-front in add(); a transient clone keeps the
+      // record consistent if anything unexpected throws mid-batch.
+      const ops = message.parsedData as Array<{ path: string, data: any }>
+      const next = JSON.parse(JSON.stringify(this.data))
+      try {
+        for (let i = 0; i < ops.length; i++) {
+          setPathValue(next, ops[i].path, ops[i].data)
+        }
+      } catch (err) {
+        this.currentStep.sender.sendMessage({ ...message,
+          action: RECORD_ACTION.INVALID_MESSAGE_DATA,
+          originalAction: message.action,
+        })
+        this.version--
+        this.next()
+        return
+      }
+      this.data = next
+    } else if (message.path) {
       setPathValue(this.data, message.path, message.parsedData)
     } else {
       this.data = message.parsedData
