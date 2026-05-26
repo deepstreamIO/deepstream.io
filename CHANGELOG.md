@@ -1,3 +1,9 @@
+## [10.1.0] - 2026.05.26
+
+### Feature
+
+- add PATCH_MULTI record action — applies an ordered batch of {path,data} ops atomically with one version bump
+
 ## [10.0.5] - 2026.05.24
 
 ### Security
