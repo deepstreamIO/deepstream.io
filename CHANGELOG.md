@@ -1,3 +1,9 @@
+## [10.1.4] - 2026.06.30
+
+### Fix
+
+- Destroy record transition
+
 ## [10.1.3] - 2026.06.29
 
 ### Chore
