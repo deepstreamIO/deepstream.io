@@ -1,3 +1,8 @@
+## [10.1.2] - 2026.06.29
+
+### Fix
+
+- PATCH_MULTI rule application
 
 ## [10.1.1] - 2026.06.28
 
