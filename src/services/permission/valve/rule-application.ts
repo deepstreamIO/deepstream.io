@@ -50,7 +50,7 @@ export default class RuleApplication {
    * references to old or new data is loaded, it errors or the maxIterationCount
    * limit is exceeded
    */
-  constructor(private params: RuleApplicationParams) {
+  constructor (private params: RuleApplicationParams) {
     this.maxIterationCount = this.params.permissionOptions.maxRuleIterations
 
     this.run = this.run.bind(this)
@@ -69,7 +69,7 @@ export default class RuleApplication {
    * is constructed and recoursively from thereon whenever the loading of a record
    * is completed
    */
-  private run(): void {
+  private run (): void {
     this.runScheduled = false
     this.iterations++
 
@@ -108,7 +108,7 @@ export default class RuleApplication {
    * Callback if a rule has irrecoverably errored. Rule errors due to unresolved
    * crossreferences are allowed as long as a loading step is in progress
    */
-  private onRuleError(error: string): void {
+  private onRuleError (error: string): void {
     if (this.isDestroyed === true) {
       return
     }
@@ -123,7 +123,7 @@ export default class RuleApplication {
    * Called either asynchronously when data is successfully retrieved from the
    * cache or synchronously if its already present
    */
-  private onLoadComplete(recordName: string, version: number, data: any): void {
+  private onLoadComplete (recordName: string, version: number, data: any): void {
     this.recordsData.set(recordName, data)
 
     if (this.isReady()) {
@@ -136,7 +136,7 @@ export default class RuleApplication {
    * Called whenever a storage or cache retrieval fails. Any kind of error during the
    * permission process is treated as a denied permission
    */
-  private onLoadError(event: any, errorMessage: string, recordName: string, socket: SocketWrapper | null) {
+  private onLoadError (event: any, errorMessage: string, recordName: string, socket: SocketWrapper | null) {
     this.recordsData.set(recordName, ERROR)
     const errorMsg = `failed to load record ${this.params.name} for permissioning:${errorMessage}`
     this.params.logger.error(RECORD_ACTION[RECORD_ACTION.RECORD_LOAD_ERROR], errorMsg, { recordName, socketWrapper: socket })
@@ -148,7 +148,7 @@ export default class RuleApplication {
    * Destroys this class and nulls down values to avoid
    * memory leaks
    */
-  private destroy() {
+  private destroy () {
     this.params.recordHandler.removeRecordRequest(this.params.name)
     this.isDestroyed = true
     this.runScheduled = false
@@ -173,7 +173,7 @@ export default class RuleApplication {
    * for record.patch, only a delta is part of the message. For the full data, the current value
    * is loaded and the patch applied on top
    */
-  private getCurrentData(): any {
+  private getCurrentData (): any {
     if (this.params.rule.hasData === false) {
       return null
     }
@@ -214,7 +214,7 @@ export default class RuleApplication {
    * Loads the records current data and applies the patch data onto it
    * to avoid users having to distuinguish between patches and updates
    */
-  private getRecordPatchData(msg: RecordWriteMessage): any {
+  private getRecordPatchData (msg: RecordWriteMessage): any {
     if (!this.recordsData) {
       return
     }
@@ -252,7 +252,7 @@ export default class RuleApplication {
  * Loads the records current data and applies the multi patch data onto it
  * to avoid users having to distuinguish between patches, multipatches  and updates
  */
-  private getRecordMultiPatchData(msg: RecordWriteMessage): any {
+  private getRecordMultiPatchData (msg: RecordWriteMessage): any {
     if (!this.recordsData) {
       return
     }
@@ -295,7 +295,7 @@ export default class RuleApplication {
    * If getData encounters an error, the rule application might already be destroyed
    * at this point
    */
-  private getOldData(): any {
+  private getOldData (): any {
     if (this.isDestroyed === true || this.params.rule.hasOldData === false) {
       return
     }
@@ -311,7 +311,7 @@ export default class RuleApplication {
    * everytime the permission is run. This allows it to merge
    * patches and update the now timestamp
    */
-  private getArguments(): any[] {
+  private getArguments (): any[] {
     return [
       this.crossReference,
       this.user,
@@ -327,7 +327,7 @@ export default class RuleApplication {
    * Returns the data for the user variable. This is only done once
    * per rule as the user is not expected to change
    */
-  private getUser(): any {
+  private getUser (): any {
     return {
       isAuthenticated: this.params.userId !== OPEN,
       id: this.params.userId,
@@ -343,7 +343,7 @@ export default class RuleApplication {
    * This is only done once per rule as the path is not expected
    * to change
    */
-  private getPathVars(): string[] {
+  private getPathVars (): string[] {
     if (!this.params.name) {
       return []
     }
@@ -359,7 +359,7 @@ export default class RuleApplication {
    * Returns true if all loading operations that are in progress have finished
    * and no run has been scheduled yet
    */
-  private isReady(): boolean {
+  private isReady (): boolean {
     let isLoading = false
 
     // @ts-ignore
@@ -379,7 +379,7 @@ export default class RuleApplication {
    * be called if the record is not already being loaded or present,
    * but I'll leave the additional safeguards in until absolutely sure.
    */
-  private loadRecord(recordName: string): void {
+  private loadRecord (recordName: string): void {
     const recordData = this.recordsData.get(recordName)
 
     if (recordData === LOADING) {
@@ -404,7 +404,7 @@ export default class RuleApplication {
    * called once the record is stable – meaning there are no remaining writes
    * waiting to be written to the cache.
    */
-  private createNewRecordRequest(recordName: string): void {
+  private createNewRecordRequest (recordName: string): void {
     recordRequest(
       recordName,
       this.params.config,
@@ -422,7 +422,7 @@ export default class RuleApplication {
    * being recoursively called until the either all cross references are loaded
    * or the rule has finally failed
    */
-  private crossReference(recordName: string): any | null {
+  private crossReference (recordName: string): any | null {
     const type = typeof recordName
     const recordData = this.recordsData.get(recordName)
 
