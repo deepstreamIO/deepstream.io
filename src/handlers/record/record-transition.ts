@@ -286,6 +286,7 @@ export class RecordTransition {
         originalAction: currentStep.message.action,
         version: this.version
       })
+      this.next()
       return
     }
 
