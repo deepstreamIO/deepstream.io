@@ -149,7 +149,7 @@ export class ListenerRegistry implements SubscriptionListener {
   */
   private processResponseForListenInProgress (socketWrapper: SocketWrapper, message: ListenMessage): void {
     const inProgress = this.listenInProgress.get(message.subscription)
-    if (!inProgress || !inProgress.queryProvider) {
+    if (!inProgress || !inProgress.queryProvider || socketWrapper !== inProgress.queryProvider.socketWrapper)  {
       // This should send a message saying response is invalid
       return
     }
@@ -363,14 +363,9 @@ export class ListenerRegistry implements SubscriptionListener {
     return
   }
 
-  // const subscribers = this.clientRegistry.getLocalSubscribers(subscriptionName)
-  // This stops a client from subscribing to itself, I think
-  // if (subscribers && subscribers.has(provider!.socketWrapper)) {
-  //   this.services.logger.debug(EVENT.LOCAL_LISTEN, `Ignoring socket since it would be subscribing to itself for ${subscriptionName}`)
-  //   this.triggerNextProvider(subscriptionName)
-  //   return
-  // }
-
+  // Self-listen is intentionally allowed: a provider may also be a subscriber to the
+  // same subscription. Echoes of its own updates are prevented by the sender skip in
+  // the subscription registry, so no self-subscription check is performed here.
   provider!.responseTimeout = setTimeout(() => {
     provider!.socketWrapper.sendMessage({
       topic: this.topic,

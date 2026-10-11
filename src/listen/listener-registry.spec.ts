@@ -327,7 +327,7 @@ describe('listener-registry-local-timeouts', () => {
         tu.providerWillGetListenTimeout(1, 'a/1')
 
         setTimeout(() => {
-            tu.providerAccepts(1, 'a/$id', 'a/1')
+            tu.providerAccepts(2, 'a/$id', 'a/1')
             tu.subscriptionHasActiveProvider('a/1', true)
             done()
         }, 40)
