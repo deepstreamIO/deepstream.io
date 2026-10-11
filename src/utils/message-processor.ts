@@ -78,7 +78,7 @@ export default class MessageProcessor {
     const bulkResult = this.bulkResults.get(passItOn.uuid)!
 
     if (error !== null || result === false) {
-      passItOn.originalMessage.names!.splice(passItOn.originalMessage.names!.indexOf(passItOn.originalMessage.name!), 1)
+      passItOn.originalMessage.names!.splice(passItOn.originalMessage.names!.indexOf(message.name!), 1)
       this.processInvalidResponse(socketWrapper, message, error, result)
     }
 
