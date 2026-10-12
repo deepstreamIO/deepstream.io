@@ -1,3 +1,9 @@
+## [10.2.4] - 2026.10.11
+
+### Security
+
+- Fix listen vulnerability
+
 ## [10.2.3] - 2026.10.10
 
 ### Security
