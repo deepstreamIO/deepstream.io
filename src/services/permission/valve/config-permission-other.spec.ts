@@ -69,4 +69,31 @@ describe('supports spaces after variables and escaped quotes', () => {
 
     testPermission(permissions, message, 'Yasser', null, callback)
   })
+
+  it('denies and does not bypass permission when message data fails to parse', (next) => {
+    const permissions = getBasePermissions()
+    permissions.record.someUser = {
+      write: '!data || user === "Yasser"'
+    }
+
+    const message = {
+      topic: C.TOPIC.RECORD,
+      action: C.RECORD_ACTION.UPDATE,
+      name: 'someUser',
+      version: 1,
+      data: '{invalid:json'
+    }
+
+    let callCount = 0
+    const callback = function (socketWrapper, msg, passItOn, error, result) {
+      callCount++
+      expect(callCount).to.equal(1)
+      expect(result).to.equal(false)
+      if (callCount === 1) {
+        setTimeout(next, 50)
+      }
+    }
+
+    testPermission(permissions, message, 'Yasser', null, callback)
+  })
 })

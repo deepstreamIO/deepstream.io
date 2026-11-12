@@ -87,6 +87,10 @@ export default class RuleApplication {
     }
 
     const args = this.getArguments()
+    if (this.isDestroyed) {
+      return
+    }
+
     let result
 
     try {
@@ -96,6 +100,10 @@ export default class RuleApplication {
         this.onRuleError(`${error}`)
         return
       }
+    }
+
+    if (this.isDestroyed) {
+      return
     }
 
     if (this.isReady()) {
@@ -189,6 +197,7 @@ export default class RuleApplication {
       result = this.params.socketWrapper.parseData(msg)
       if (result instanceof Error) {
         this.onRuleError(`error when converting message data ${result.toString()}`)
+        return
       } else {
         return msg.parsedData
       }
@@ -196,6 +205,7 @@ export default class RuleApplication {
       result = this.getRecordPatchData(msg as RecordWriteMessage)
       if (result instanceof Error) {
         this.onRuleError(`error when converting message data ${result.toString()}`)
+        return
       } else {
         return result
       }
@@ -203,6 +213,7 @@ export default class RuleApplication {
       result = this.getRecordMultiPatchData(msg as RecordWriteMessage)
       if (result instanceof Error) {
         this.onRuleError(`error when converting message data ${result.toString()}`)
+        return
       } else {
         return result
       }
@@ -360,6 +371,10 @@ export default class RuleApplication {
    * and no run has been scheduled yet
    */
   private isReady (): boolean {
+    if (this.isDestroyed || !this.recordsData) {
+      return false
+    }
+
     let isLoading = false
 
     // @ts-ignore
@@ -428,6 +443,7 @@ export default class RuleApplication {
 
     if (type !== UNDEFINED && type !== STRING) {
       this.onRuleError(`crossreference got unsupported type ${type}`)
+      return null
     } else if (type === UNDEFINED || recordName.indexOf(UNDEFINED) !== -1) {
       return
     } else if (recordData === LOADING) {
