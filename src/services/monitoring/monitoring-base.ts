@@ -59,7 +59,7 @@ export abstract class MonitoringBase extends DeepstreamPlugin implements Deepstr
     }
 
     public onBroadcast (message: Message, count: number): void {
-        let actionsMap = this.receiveStats[TOPIC[message.topic]]
+        let actionsMap = this.sendStats[TOPIC[message.topic]]
         if (!actionsMap) {
             actionsMap = {}
             this.sendStats[TOPIC[message.topic]] = actionsMap

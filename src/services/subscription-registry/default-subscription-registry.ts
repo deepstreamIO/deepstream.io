@@ -148,7 +148,9 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
 
     const subscribers = subscription.sockets
 
-    this.services.monitoring.onBroadcast(message, subscribers.size)
+    // The sender is skipped below, so it is not one of the sockets the message goes to
+    const recipients = senderSocket !== null && subscribers.has(senderSocket) ? subscribers.size - 1 : subscribers.size
+    this.services.monitoring.onBroadcast(message, recipients)
 
     const serializedMessages: { [index: string]: any } = {}
     for (const socket of subscribers) {

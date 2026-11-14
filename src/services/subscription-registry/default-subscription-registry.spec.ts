@@ -140,6 +140,23 @@ describe('subscription registry', () => {
       subscriptionRegistry.sendToSubscribers('someName', eventMessage, false, clientA.socketWrapper)
     })
 
+    it('reports only the subscribers it sends to to monitoring', () => {
+      subscriptionRegistry.subscribe(subscribeMessage.name, subscribeMessage, clientA.socketWrapper)
+      subscriptionRegistry.subscribe(subscribeMessage.name, subscribeMessage, clientB.socketWrapper)
+
+      clientB.socketWrapperMock
+        .expects('sendBuiltMessage')
+        .once()
+
+      const onBroadcast = sinon.spy(services.monitoring!, 'onBroadcast')
+      try {
+        subscriptionRegistry.sendToSubscribers('someName', eventMessage, false, clientA.socketWrapper)
+        expect(onBroadcast).to.have.been.calledOnceWithExactly(eventMessage, 1)
+      } finally {
+        onBroadcast.restore()
+      }
+    })
+
     it('unsubscribes', () => {
       subscriptionRegistry.subscribe(subscribeMessage.name, subscribeMessage, clientA.socketWrapper)
 
